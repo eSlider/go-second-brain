@@ -49,7 +49,7 @@ README.md
 
 ### Идентификация кейсов и субъектов
 
-Стабильные короткие ID (полная таблица ссылок: [id-reference](./docs/project/id-reference.md)):
+Стабильные короткие ID (таблицы и термины: [глоссарий](./docs/project/glossary.md#id-reference)):
 
 - Субъекты: [SUBJ-PATIENT](./docs/project/subjects/patient.md), [SUBJ-ANGEHORIGER](./docs/project/subjects/angehoeriger.md), [SUBJ-BETREUER](./docs/project/subjects/betreuer.md), [SUBJ-ARZT](./docs/project/subjects/arzt.md), [SUBJ-KRANKENKASSE](./docs/project/subjects/krankenkasse.md), [SUBJ-APOTHEKE](./docs/project/subjects/apotheke.md), [SUBJ-PDL](./docs/project/subjects/pdl.md), [SUBJ-FACHKRAFT](./docs/project/subjects/fachkraft.md), [SUBJ-HELFER](./docs/project/subjects/pflegehelfer.md), [SUBJ-CURASOFT](./docs/project/subjects/curasoft.md), [SUBJ-MOBILE-APP](./docs/project/subjects/mobile-app.md), [SUBJ-ENTLASSMGMT](./docs/project/subjects/entlassmanagement.md), [SUBJ-LEAD-BROKER](./docs/project/subjects/lead-broker.md), [SUBJ-MDK](./docs/project/subjects/mdk.md), [SUBJ-BETRIEBSPRUEFUNG](./docs/project/subjects/betriebspruefung.md), [SUBJ-DSGVO](./docs/project/subjects/datenschutz.md).
 - [UC-01](./docs/project/cases/UC-01-intake-new-client.md)…[UC-16](./docs/project/cases/UC-16-angehoerigen-schulung.md) · [кейсы](./docs/project/cases/README.md).

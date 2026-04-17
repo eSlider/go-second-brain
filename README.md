@@ -45,8 +45,7 @@ edelweiss/
 1. **Быстрый контекст**
    → [кратко, чем живёт компания](./docs/project/overview.md)
    → [юридические реквизиты Edelweiss](./docs/project/company-info.md)
-   → [расшифровка терминов (Pflegegrad, Verordnung, SGB V, Tour, PDL, Fachkraft и т.д.); якоря для сокращений — в начале глоссария](./docs/project/glossary.md)
-   → [таблица ссылок `SUBJ-*`, `UC-*`, `PAIN-*`, `AUTO-*`, `AGENT-*`, `ROAD-*`](./docs/project/id-reference.md)
+   → [глоссарий терминов и справочник ID (`SUBJ-*`, `UC-*`, `PAIN-*`, `AUTO-*`, `AGENT-*`, `ROAD-*`)](./docs/project/glossary.md)
 2. **Детали интервью**
    → [сквозная сводка интервью](./docs/reports/00-summary.md).
 3. **Структурный анализ**

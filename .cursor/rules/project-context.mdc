@@ -12,8 +12,7 @@ alwaysApply: true
 1. `README.md` — структура проекта.
 2. `AGENTS.md` — конвенции для AI-агентов.
 3. `docs/project/overview.md` — чем занимается компания.
-4. `docs/project/glossary.md` — термины (Verordnung, Pflegegrad, SGB V, Positionsnummer …).
-5. `docs/project/id-reference.md` — ссылки на все `SUBJ-*`, `UC-*`, якоря `PAIN-*`, `AUTO-*`, `AGENT-*`, `ROAD-*`.
+4. `docs/project/glossary.md` — термины и справочник ID (`SUBJ-*`, `UC-*`, `PAIN-*`, `AUTO-*`, `AGENT-*`, `ROAD-*`).
 
 ## Правила работы
 
