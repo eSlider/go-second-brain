@@ -5,10 +5,10 @@
 ## TL;DR для агента
 
 1. Репозиторий — это **база знаний** о Pflegedienst (служба ухода на дому в Германии).
-2. Основной язык контента — **русский**. Термины (Verordnung, Pflegegrad, Kasse, Tour, SGB V …) оставляем в оригинальном немецком написании, расшифровка — в [`docs/project/glossary.md`](./docs/project/glossary.md).
+2. Основной язык контента — **русский**. Термины (Verordnung, Pflegegrad, Kasse, Tour, SGB V …) оставляем в оригинальном немецком написании, расшифровка — в [глоссарии](./docs/project/glossary.md).
 3. В `docs/*.stt.txt` — сырые STT-транскрипты (ошибки распознавания, немецкие слова записаны русскими буквами). В `docs/reports/*.md` — уже читабельные, структурированные версии.
 4. В `docs/project/` — аналитические артефакты (субъекты, кейсы, процессы, оптимизация).
-5. Перед любым крупным изменением — читаем [`README.md`](./README.md) и [`docs/project/overview.md`](./docs/project/overview.md).
+5. Перед любым крупным изменением — читаем [README](./README.md) и [обзор](./docs/project/overview.md).
 
 ## Порядок чтения для нового агента
 
@@ -45,16 +45,16 @@ README.md
 
 ### Идентификация кейсов и субъектов
 
-Стабильные короткие ID (полная таблица ссылок: [`docs/project/id-reference.md`](./docs/project/id-reference.md)):
+Стабильные короткие ID (полная таблица ссылок: [id-reference](./docs/project/id-reference.md)):
 
 - Субъекты: [SUBJ-PATIENT](./docs/project/subjects/patient.md), [SUBJ-ANGEHORIGER](./docs/project/subjects/angehoeriger.md), [SUBJ-BETREUER](./docs/project/subjects/betreuer.md), [SUBJ-ARZT](./docs/project/subjects/arzt.md), [SUBJ-KRANKENKASSE](./docs/project/subjects/krankenkasse.md), [SUBJ-APOTHEKE](./docs/project/subjects/apotheke.md), [SUBJ-PDL](./docs/project/subjects/pdl.md), [SUBJ-FACHKRAFT](./docs/project/subjects/fachkraft.md), [SUBJ-HELFER](./docs/project/subjects/pflegehelfer.md), [SUBJ-CURASOFT](./docs/project/subjects/curasoft.md), [SUBJ-MOBILE-APP](./docs/project/subjects/mobile-app.md), [SUBJ-ENTLASSMGMT](./docs/project/subjects/entlassmanagement.md), [SUBJ-LEAD-BROKER](./docs/project/subjects/lead-broker.md), [SUBJ-MDK](./docs/project/subjects/mdk.md), [SUBJ-BETRIEBSPRUEFUNG](./docs/project/subjects/betriebspruefung.md), [SUBJ-DSGVO](./docs/project/subjects/datenschutz.md).
-- Кейсы [UC-01](./docs/project/cases/UC-01-intake-new-client.md)…[UC-16](./docs/project/cases/UC-16-angehoerigen-schulung.md) — каталог [`docs/project/cases/README.md`](./docs/project/cases/README.md).
-- Точки боли [PAIN-01](./docs/project/optimization/pain-points.md#pain-01)…[PAIN-48](./docs/project/optimization/pain-points.md#pain-48) — [`docs/project/optimization/pain-points.md`](./docs/project/optimization/pain-points.md).
-- Идеи автоматизации [AUTO-01](./docs/project/optimization/automation-opportunities.md#auto-01)…[AUTO-20](./docs/project/optimization/automation-opportunities.md#auto-20) — [`docs/project/optimization/automation-opportunities.md`](./docs/project/optimization/automation-opportunities.md).
-- AI-агенты [AGENT-01](./docs/project/optimization/ai-agent-ideas.md#agent-01)…[AGENT-10](./docs/project/optimization/ai-agent-ideas.md#agent-10) — [`docs/project/optimization/ai-agent-ideas.md`](./docs/project/optimization/ai-agent-ideas.md).
-- Roadmap [ROAD-01](./docs/project/optimization/roadmap.md#road-01)…[ROAD-08](./docs/project/optimization/roadmap.md#road-08) — [`docs/project/optimization/roadmap.md`](./docs/project/optimization/roadmap.md).
+- Кейсы [UC-01](./docs/project/cases/UC-01-intake-new-client.md)…[UC-16](./docs/project/cases/UC-16-angehoerigen-schulung.md) — [каталог](./docs/project/cases/README.md).
+- Точки боли [PAIN-01](./docs/project/optimization/pain-points.md#pain-01)…[PAIN-48](./docs/project/optimization/pain-points.md#pain-48) — [список](./docs/project/optimization/pain-points.md).
+- Идеи автоматизации [AUTO-01](./docs/project/optimization/automation-opportunities.md#auto-01)…[AUTO-20](./docs/project/optimization/automation-opportunities.md#auto-20) — [список](./docs/project/optimization/automation-opportunities.md).
+- AI-агенты [AGENT-01](./docs/project/optimization/ai-agent-ideas.md#agent-01)…[AGENT-10](./docs/project/optimization/ai-agent-ideas.md#agent-10) — [список](./docs/project/optimization/ai-agent-ideas.md).
+- Roadmap [ROAD-01](./docs/project/optimization/roadmap.md#road-01)…[ROAD-08](./docs/project/optimization/roadmap.md#road-08) — [roadmap](./docs/project/optimization/roadmap.md).
 
-Сокращения и немецкие термины — в [`docs/project/glossary.md`](./docs/project/glossary.md) (якоря, например `#pdl`, `#sgb-v`, `#verordnung`).
+Сокращения и немецкие термины — в [глоссарии](./docs/project/glossary.md) (якоря, например `#pdl`, `#sgb-v`, `#verordnung`).
 
 ### Работа с docs/*.stt.txt
 

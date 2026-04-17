@@ -4,10 +4,10 @@
 
 ## Источники
 
-- Сырой материал — аудио-транскрипты интервью в [`docs/`](./docs).
+- Сырой материал — аудио-транскрипты интервью в [docs](./docs).
   - Собеседник: **Artem M.** (CTO, Edelweiss)
   - Интервьюер: **Andrey** (задаёт вопросы, уточняет процессы)
-- Обработанный, читаемый формат — в [`docs/reports/`](./docs/reports).
+- Обработанный, читаемый формат — в [docs/reports](./docs/reports).
 
 ## Структура репозитория
 
@@ -37,18 +37,18 @@ edelweiss/
 ## Как читать проект
 
 1. **Быстрый контекст**
-   → [`docs/project/overview.md`](./docs/project/overview.md) — кратко, чем живёт компания.
-   → [`docs/project/company-info.md`](./docs/project/company-info.md) — юридические реквизиты Edelweiss.
-   → [`docs/project/glossary.md`](./docs/project/glossary.md) — расшифровка терминов (Pflegegrad, Verordnung, SGB V, Tour, PDL, Fachkraft и т.д.); якоря для сокращений — в начале глоссария.
-   → [`docs/project/id-reference.md`](./docs/project/id-reference.md) — таблица ссылок `SUBJ-*`, `UC-*`, `PAIN-*`, `AUTO-*`, `AGENT-*`, `ROAD-*`.
+   → [кратко, чем живёт компания](./docs/project/overview.md)
+   → [юридические реквизиты Edelweiss](./docs/project/company-info.md)
+   → [расшифровка терминов (Pflegegrad, Verordnung, SGB V, Tour, PDL, Fachkraft и т.д.); якоря для сокращений — в начале глоссария](./docs/project/glossary.md)
+   → [таблица ссылок `SUBJ-*`, `UC-*`, `PAIN-*`, `AUTO-*`, `AGENT-*`, `ROAD-*`](./docs/project/id-reference.md)
 2. **Детали интервью**
-   → [`docs/reports/00-summary.md`](./docs/reports/00-summary.md).
+   → [сквозная сводка интервью](./docs/reports/00-summary.md).
 3. **Структурный анализ**
-   → [`docs/project/subjects/`](./docs/project/subjects) — кто (пациент, врач, касса, сотрудник, система).
-   → [`docs/project/cases/`](./docs/project/cases) — кейсы и сценарии.
-   → [`docs/project/processes/`](./docs/project/processes) — как склеивается end-to-end.
+   → [субъекты: кто участвует (пациент, врач, касса, сотрудник, система)](./docs/project/subjects).
+   → [кейсы и сценарии](./docs/project/cases).
+   → [процессы: сквозные цепочки](./docs/project/processes).
 4. **Точки роста**
-   → [`docs/project/optimization/`](./docs/project/optimization) — где болит и что можно улучшить.
+   → [боли и идеи улучшения](./docs/project/optimization).
 
 ## Жанр проекта
 
@@ -60,7 +60,7 @@ edelweiss/
 
 ## Работа с AI-агентами
 
-См. [`AGENTS.md`](./AGENTS.md) — там собраны инструкции для skills/агентов: что читать в первую очередь, как обновлять документы, какие конвенции использовать.
+См. [инструкции для skills/агентов](./AGENTS.md): что читать в первую очередь, как обновлять документы, какие конвенции использовать.
 
 ## Статус
 
