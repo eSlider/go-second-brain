@@ -11,18 +11,19 @@ alwaysApply: true
 
 1. `README.md` — структура проекта.
 2. `AGENTS.md` — конвенции для AI-агентов.
-3. `project/overview.md` — чем занимается компания.
-4. `project/glossary.md` — термины (Verordnung, Pflegegrad, SGB V, Positionsnummer …).
+3. `docs/project/overview.md` — чем занимается компания.
+4. `docs/project/glossary.md` — термины (Verordnung, Pflegegrad, SGB V, Positionsnummer …).
+5. `docs/project/id-reference.md` — ссылки на все `SUBJ-*`, `UC-*`, якоря `PAIN-*`, `AUTO-*`, `AGENT-*`, `ROAD-*`.
 
 ## Правила работы
 
 - Язык — **русский**. Немецкие термины — в оригинальном написании.
 - Сырые транскрипты в `docs/*.stt.txt` **не редактировать**. Работа идёт в `docs/reports/*.md`.
-- Новые материалы обобщаем в `project/`:
-  - новые субъекты → `project/subjects/`;
-  - новые кейсы → `project/cases/` (нумерация `UC-XX`);
-  - новые процессы → `project/processes/`;
-  - новые боли / автоматизации → `project/optimization/`.
+- Новые материалы обобщаем в `docs/project/`:
+  - новые субъекты → `docs/project/subjects/`;
+  - новые кейсы → `docs/project/cases/` (нумерация `UC-XX`);
+  - новые процессы → `docs/project/processes/`;
+  - новые боли / автоматизации → `docs/project/optimization/`.
 - Не изобретать фактов. Всё, что не подтверждено интервью — помечаем `TODO: уточнить у CTO`.
 
 ## Минимальные изменения

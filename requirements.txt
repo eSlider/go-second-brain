@@ -1,0 +1,19 @@
+# MkDocs core
+mkdocs>=1.6.0
+
+# Material theme
+mkdocs-material>=9.5.0
+
+# Mermaid diagrams
+mkdocs-mermaid2-plugin>=1.1.0
+
+# Auto-navigation from directories
+mkdocs-awesome-pages-plugin>=2.9.0
+
+# Virtual index/AGENTS from repo root (project/ лежит в docs/project/)
+mkdocs-gen-files>=0.5.0
+
+# Markdown extensions
+pymdown-extensions>=10.7.0
+
+

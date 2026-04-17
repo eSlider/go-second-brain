@@ -1,0 +1,58 @@
+# Рендер только в памяти: `mkdocs serve` (см. Dockerfile) не пишет статический сайт на диск.
+# Изменения *.md подхватываются через bind-mount `.:/docs` и встроенный livereload MkDocs.
+# `docker compose watch` — пересборка образа только при смене Dockerfile / requirements / mkdocs.yml.
+
+services:
+  docs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      cache_from:
+        - edelweiss-docs:latest
+    image: edelweiss-docs:latest
+    container_name: edelweiss-docs
+
+    ports:
+      # Слушать на всех интерфейсах хоста (не только localhost)
+      - "0.0.0.0:${DOCS_PORT:-5496}:8000"
+
+    # Весь репозиторий (mkdocs.yml в корне, контент в docs/ включая docs/project/)
+    volumes:
+      - .:/docs
+      - /etc/passwd:/etc/passwd:ro
+      - /etc/group:/etc/group:ro
+
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+
+    develop:
+      watch:
+        - action: rebuild
+          path: mkdocs.yml
+        - action: rebuild
+          path: requirements.txt
+        - action: rebuild
+          path: Dockerfile
+
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/search/search_index.json"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

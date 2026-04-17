@@ -1,0 +1,124 @@
+site_name: "Edelweiss — база знаний"
+site_description: "Pflegedienst Edelweiss: интервью, аналитика, кейсы, процессы"
+site_author: "Edelweiss / NAI"
+site_url: ""
+
+# `docs/` — весь контент сайта: `reports/`, `project/`, STT (исключены), `_scripts/`. README и AGENTS — виртуально из корня через gen-files.
+docs_dir: docs
+
+# Не складывать сгенерированный сайт в репозиторий (том .:/docs); только рендер в памяти/в /tmp
+site_dir: /tmp/mkdocs-site
+
+exclude_docs: |
+  **/*.stt.txt
+  /_scripts/**
+
+# Theme configuration
+theme:
+  name: material
+  language: ru
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.indexes
+    - navigation.instant
+    - navigation.tracking
+    - search.highlight
+    - search.share
+    - search.suggest
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - header.autohide
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Светлая тема
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: cyan
+      toggle:
+        icon: material/brightness-7
+        name: Тёмная тема
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: cyan
+      toggle:
+        icon: material/brightness-4
+        name: Как в системе
+  font:
+    text: Roboto
+    code: "JetBrains Mono"
+  icon:
+    repo: fontawesome/solid/book
+
+# Plugins configuration
+plugins:
+  - gen-files:
+      scripts:
+        - docs/_scripts/gen_edelweiss.py
+  - search:
+      lang:
+        - ru
+        - en
+        - de
+  - awesome-pages
+  - mermaid2:
+      arguments:
+        theme: default
+        themeVariables:
+          primaryColor: "#00897b"
+          primaryTextColor: "#fff"
+          primaryBorderColor: "#00695c"
+          secondaryColor: "#D8DEE9"
+          tertiaryColor: "#ECEFF4"
+
+# Markdown extensions
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      toc_depth: 3
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+      auto_title: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+extra:
+  generator: false

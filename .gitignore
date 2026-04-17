@@ -1,0 +1,11 @@
+# Статическая сборка MkDocs (если когда-нибудь запустят `mkdocs build` без site_dir в /tmp)
+/site/
+
+# Кэши и служебные артефакты
+**/__pycache__/
+**/.cache/
+**/.pytest_cache/
+**/.mypy_cache/
+.mkdocs_cache/
+*.pyc
+.DS_Store

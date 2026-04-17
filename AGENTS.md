@@ -5,21 +5,21 @@
 ## TL;DR для агента
 
 1. Репозиторий — это **база знаний** о Pflegedienst (служба ухода на дому в Германии).
-2. Основной язык контента — **русский**. Термины (Verordnung, Pflegegrad, Kasse, Tour, SGB V …) оставляем в оригинальном немецком написании, расшифровка — в [`project/glossary.md`](./project/glossary.md).
+2. Основной язык контента — **русский**. Термины (Verordnung, Pflegegrad, Kasse, Tour, SGB V …) оставляем в оригинальном немецком написании, расшифровка — в [`docs/project/glossary.md`](./docs/project/glossary.md).
 3. В `docs/*.stt.txt` — сырые STT-транскрипты (ошибки распознавания, немецкие слова записаны русскими буквами). В `docs/reports/*.md` — уже читабельные, структурированные версии.
-4. В `project/` — аналитические артефакты (субъекты, кейсы, процессы, оптимизация).
-5. Перед любым крупным изменением — читаем [`README.md`](./README.md) и [`project/overview.md`](./project/overview.md).
+4. В `docs/project/` — аналитические артефакты (субъекты, кейсы, процессы, оптимизация).
+5. Перед любым крупным изменением — читаем [`README.md`](./README.md) и [`docs/project/overview.md`](./docs/project/overview.md).
 
 ## Порядок чтения для нового агента
 
 ```
 README.md
- └── project/overview.md
-      └── project/glossary.md
+ └── docs/project/overview.md
+      └── docs/project/glossary.md
            └── docs/reports/00-summary.md
-                ├── project/subjects/README.md
-                ├── project/cases/README.md
-                └── project/processes/README.md
+                ├── docs/project/subjects/README.md
+                ├── docs/project/cases/README.md
+                └── docs/project/processes/README.md
 ```
 
 После этого агент имеет достаточный контекст, чтобы:
@@ -34,7 +34,7 @@ README.md
 
 - Основной язык — русский.
 - Немецкие термины не переводим насильно: `Verordnung`, `Pflegegrad`, `Fachkraft`, `PDL`, `Krankenkasse`, `Tour`, `Dienstplan`, `Abrechnung`, `Erstgespräch`, `Medikationsplan`.
-- Для каждого нового термина — добавляем запись в `project/glossary.md`.
+- Для каждого нового термина — добавляем запись в `docs/project/glossary.md`.
 
 ### Форматирование
 
@@ -45,14 +45,16 @@ README.md
 
 ### Идентификация кейсов и субъектов
 
-Стабильные короткие ID:
+Стабильные короткие ID (полная таблица ссылок: [`docs/project/id-reference.md`](./docs/project/id-reference.md)):
 
-- Субъекты: `SUBJ-PATIENT`, `SUBJ-ANGEHORIGER`, `SUBJ-BETREUER`, `SUBJ-ARZT`, `SUBJ-KRANKENKASSE`, `SUBJ-APOTHEKE`, `SUBJ-PDL`, `SUBJ-FACHKRAFT`, `SUBJ-HELFER`, `SUBJ-CURASOFT`, `SUBJ-MOBILE-APP`, `SUBJ-ENTLASSMGMT`, `SUBJ-LEAD-BROKER`, `SUBJ-MDK`, `SUBJ-BETRIEBSPRUEFUNG`.
-- Кейсы: `UC-01`, `UC-02`, … (см. [`project/cases/README.md`](./project/cases/README.md)).
-- Точки боли: `PAIN-01`, `PAIN-02`, …
-- Идеи автоматизации: `AUTO-01`, `AUTO-02`, …
-- AI-агенты: `AGENT-01`, `AGENT-02`, …
-- Roadmap: `ROAD-01`, `ROAD-02`, …
+- Субъекты: [SUBJ-PATIENT](./docs/project/subjects/patient.md), [SUBJ-ANGEHORIGER](./docs/project/subjects/angehoeriger.md), [SUBJ-BETREUER](./docs/project/subjects/betreuer.md), [SUBJ-ARZT](./docs/project/subjects/arzt.md), [SUBJ-KRANKENKASSE](./docs/project/subjects/krankenkasse.md), [SUBJ-APOTHEKE](./docs/project/subjects/apotheke.md), [SUBJ-PDL](./docs/project/subjects/pdl.md), [SUBJ-FACHKRAFT](./docs/project/subjects/fachkraft.md), [SUBJ-HELFER](./docs/project/subjects/pflegehelfer.md), [SUBJ-CURASOFT](./docs/project/subjects/curasoft.md), [SUBJ-MOBILE-APP](./docs/project/subjects/mobile-app.md), [SUBJ-ENTLASSMGMT](./docs/project/subjects/entlassmanagement.md), [SUBJ-LEAD-BROKER](./docs/project/subjects/lead-broker.md), [SUBJ-MDK](./docs/project/subjects/mdk.md), [SUBJ-BETRIEBSPRUEFUNG](./docs/project/subjects/betriebspruefung.md), [SUBJ-DSGVO](./docs/project/subjects/datenschutz.md).
+- Кейсы [UC-01](./docs/project/cases/UC-01-intake-new-client.md)…[UC-16](./docs/project/cases/UC-16-angehoerigen-schulung.md) — каталог [`docs/project/cases/README.md`](./docs/project/cases/README.md).
+- Точки боли [PAIN-01](./docs/project/optimization/pain-points.md#pain-01)…[PAIN-48](./docs/project/optimization/pain-points.md#pain-48) — [`docs/project/optimization/pain-points.md`](./docs/project/optimization/pain-points.md).
+- Идеи автоматизации [AUTO-01](./docs/project/optimization/automation-opportunities.md#auto-01)…[AUTO-20](./docs/project/optimization/automation-opportunities.md#auto-20) — [`docs/project/optimization/automation-opportunities.md`](./docs/project/optimization/automation-opportunities.md).
+- AI-агенты [AGENT-01](./docs/project/optimization/ai-agent-ideas.md#agent-01)…[AGENT-10](./docs/project/optimization/ai-agent-ideas.md#agent-10) — [`docs/project/optimization/ai-agent-ideas.md`](./docs/project/optimization/ai-agent-ideas.md).
+- Roadmap [ROAD-01](./docs/project/optimization/roadmap.md#road-01)…[ROAD-08](./docs/project/optimization/roadmap.md#road-08) — [`docs/project/optimization/roadmap.md`](./docs/project/optimization/roadmap.md).
+
+Сокращения и немецкие термины — в [`docs/project/glossary.md`](./docs/project/glossary.md) (якоря, например `#pdl`, `#sgb-v`, `#verordnung`).
 
 ### Работа с docs/*.stt.txt
 
@@ -68,9 +70,9 @@ README.md
 
 Если из нового материала появляется новая информация:
 
-1. Добавляем её в соответствующий файл `project/subjects/<…>.md`, `project/cases/<…>.md` или `project/processes/<…>.md`.
-2. Обновляем `project/glossary.md` при появлении нового термина.
-3. Если это новая боль или автоматизация — добавляем в `project/optimization/`.
+1. Добавляем её в соответствующий файл `docs/project/subjects/<…>.md`, `docs/project/cases/<…>.md` или `docs/project/processes/<…>.md`.
+2. Обновляем `docs/project/glossary.md` при появлении нового термина.
+3. Если это новая боль или автоматизация — добавляем в `docs/project/optimization/`.
 
 ### Git и минимальные изменения
 
@@ -92,4 +94,4 @@ Golang-skills и подобные — неактуальны (кода в про
 
 - Менять сырые транскрипты.
 - Изобретать факты, не подтверждённые интервью. Если чего-то нет в источниках — помечаем `TODO: уточнить у CTO`.
-- Использовать английские/немецкие термины без сверки с `glossary.md`.
+- Использовать английские/немецкие термины без сверки с `docs/project/glossary.md`.
