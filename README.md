@@ -72,10 +72,12 @@ edelweiss/
 Поверх `docs/project/` можно поднять стек **Neo4j + Qdrant + бот в Matrix** (код в [`services/`](./services/), образы в [`compose.yml`](./compose.yml)). **Ollama** ожидается на хосте (`OLLAMA_URL`, по умолчанию `http://127.0.0.1:11434`), в контейнерах доступ через `host.docker.internal`.
 
 - Шаблон переменных: [.env.example](./.env.example) (скопируйте в `.env`).
-- Поднять графовые сервисы: `make kg-up` или `docker compose --profile kg up -d neo4j qdrant`.
+- Эмбеддинги по умолчанию: **`embeddinggemma`** (`EMBED_MODEL`); генерация ответов: **`cajina/gemma4_e2b-q4_k_s:v01`** (`GEN_MODEL`, `ollama pull …`). После смены модели эмбеддингов — полный ingest.
+- Поднять графовые сервисы: `./bin/run.sh` (Neo4j + Qdrant + бот), `./bin/stop.sh` — остановка; `INCLUDE_ELASTIC=1 ./bin/run.sh` — ещё Elasticsearch/Kibana/Filebeat. Альтернатива: `make kg-up` или `docker compose --profile kg up -d neo4j qdrant`.
 - Индексация документации: `make ingest` или `docker compose --profile kg run --rm kg-ingestor`.
 - Запуск бота: `make bot` или `docker compose --profile bot up -d matrix-bot` (после индексации). В комнате отвечает на сообщения с префиксом `!edel` (см. `BOT_COMMAND_PREFIX`) или с упоминанием `@<localpart>` бота.
 - Neo4j Browser: `http://localhost:7474` (логин `neo4j`, пароль из `NEO4J_PASSWORD`).
+- Логи контейнеров в **Elasticsearch + Kibana** (поиск ошибок, фильтры по сервису): `make elastic-up` или `docker compose --profile elastic up -d elasticsearch kibana filebeat` → Kibana `http://127.0.0.1:5601`. Подробности: [deploy/elastic/README.md](./deploy/elastic/README.md).
 
 Интеграционные тесты (Docker + при необходимости Ollama на localhost): `make test-integration`.
 

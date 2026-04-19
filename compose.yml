@@ -1,6 +1,11 @@
 # Рендер только в памяти: `mkdocs serve` (см. Dockerfile) не пишет статический сайт на диск.
 # Изменения *.md подхватываются через bind-mount `.:/docs` и встроенный livereload MkDocs.
 # `docker compose watch` — пересборка образа только при смене Dockerfile / requirements / mkdocs.yml.
+#
+# Параметры подставляются из файла `.env` в корне репозитория (интерполяция Compose).
+# Скопируйте `.env.example` → `.env` и задайте значения. См. комментарии в `.env.example`.
+
+name: edelweiss
 
 services:
   docs:
@@ -63,8 +68,8 @@ services:
     environment:
       NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:-edelweiss}
     ports:
-      - "7474:7474"
-      - "7687:7687"
+      - "${NEO4J_HTTP_PORT:-7474}:7474"
+      - "${NEO4J_BOLT_PORT:-7687}:7687"
     volumes:
       - neo4j-data:/data
 
@@ -72,7 +77,7 @@ services:
     image: qdrant/qdrant:latest
     profiles: [kg, bot]
     ports:
-      - "6333:6333"
+      - "${QDRANT_HTTP_PORT:-6333}:6333"
     volumes:
       - qdrant-data:/qdrant/storage
 
@@ -89,16 +94,17 @@ services:
     env_file:
       - .env
     environment:
-      DOCS_ROOT: /repo/docs/project
-      NEO4J_URI: bolt://neo4j:7687
-      QDRANT_URL: http://qdrant:6333
-      OLLAMA_URL: http://host.docker.internal:11434
+      DOCS_ROOT: ${COMPOSE_INGEST_DOCS_ROOT:-/repo/docs/project}
+      NEO4J_URI: ${COMPOSE_INGEST_NEO4J_URI:-bolt://neo4j:7687}
+      QDRANT_URL: ${COMPOSE_INGEST_QDRANT_URL:-http://qdrant:6333}
+      OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
       - .:/repo:ro
     restart: "no"
 
+  # matrix-bot: см. COMPOSE_BOT_NETWORK_MODE и COMPOSE_BOT_* в .env
   matrix-bot:
     build:
       context: ./services
@@ -106,23 +112,86 @@ services:
       target: bot
     image: edelweiss-matrix-bot:latest
     profiles: [bot]
+    network_mode: ${COMPOSE_BOT_NETWORK_MODE:-host}
     depends_on:
       - neo4j
       - qdrant
     env_file:
       - .env
     environment:
-      NEO4J_URI: bolt://neo4j:7687
-      QDRANT_URL: http://qdrant:6333
-      OLLAMA_URL: http://host.docker.internal:11434
-      MATRIX_BOT_DB: /data/matrix-bot.db
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      NEO4J_URI: ${COMPOSE_BOT_NEO4J_URI:-bolt://127.0.0.1:7687}
+      QDRANT_URL: ${COMPOSE_BOT_QDRANT_URL:-http://127.0.0.1:6333}
+      # Local Ollama on host (host network). Override in .env if the bot must use another URL.
+      OLLAMA_URL: ${OLLAMA_URL:-http://127.0.0.1:11434}
+      MATRIX_BOT_DB: ${MATRIX_BOT_DB:-/data/matrix-bot.db}
     volumes:
       - matrix-bot-data:/data
+    restart: unless-stopped
+
+  # --- Elasticsearch stack (logs + search in Kibana). Profile: elastic ---
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTIC_VERSION:-8.15.3}
+    profiles: [elastic]
+    environment:
+      - node.name=${ES_NODE_NAME:-es01}
+      - cluster.name=${ES_CLUSTER_NAME:-edelweiss-logs}
+      - discovery.type=single-node
+      - bootstrap.memory_lock=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false
+      - action.auto_create_index=true
+    ports:
+      - "127.0.0.1:${ELASTICSEARCH_PORT:-9200}:9200"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://127.0.0.1:9200 >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:${KIBANA_VERSION:-8.15.3}
+    profiles: [elastic]
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      - ELASTICSEARCH_HOSTS=${KIBANA_ELASTICSEARCH_HOSTS:-http://elasticsearch:9200}
+      - SERVER_HOST=0.0.0.0
+    ports:
+      - "127.0.0.1:${KIBANA_PORT:-5601}:5601"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://127.0.0.1:5601/api/status >/dev/null"]
+      interval: 15s
+      timeout: 10s
+      retries: 30
+      start_period: 90s
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:${FILEBEAT_VERSION:-8.15.3}
+    profiles: [elastic]
+    user: root
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    volumes:
+      - ./deploy/elastic/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - filebeat-data:/usr/share/filebeat/data
+    command: ["filebeat", "-e", "-strict.perms=false"]
     restart: unless-stopped
 
 volumes:
   neo4j-data:
   qdrant-data:
   matrix-bot-data:
+  elasticsearch-data:
+  filebeat-data:

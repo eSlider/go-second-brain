@@ -68,12 +68,12 @@ func TestQdrantEmbedAndSearch(t *testing.T) {
 	require.NoError(t, err)
 
 	emb := embed.New(ollamaURL(), 60*time.Second)
-	_, err = emb.Embed(ctx, getenvDefault("EMBED_MODEL", "nomic-embed-text"), "ping")
+	_, err = emb.Embed(ctx, getenvDefault("EMBED_MODEL", "embeddinggemma"), "ping")
 	if err != nil {
 		t.Skipf("ollama not reachable: %v", err)
 	}
 
-	vec, err := emb.Embed(ctx, getenvDefault("EMBED_MODEL", "nomic-embed-text"), "Abrechnung Krankenkasse Pflegedienst")
+	vec, err := emb.Embed(ctx, getenvDefault("EMBED_MODEL", "embeddinggemma"), "Abrechnung Krankenkasse Pflegedienst")
 	require.NoError(t, err)
 	dim := uint64(len(vec))
 
@@ -88,7 +88,7 @@ func TestQdrantEmbedAndSearch(t *testing.T) {
 		Text:    "UC-07 Abrechnung Krankenkasse Rechnung Genehmigung",
 	}
 	h := docsparse.ChunkContentHash(ch)
-	vec2, err := emb.Embed(ctx, getenvDefault("EMBED_MODEL", "nomic-embed-text"), ch.Text)
+	vec2, err := emb.Embed(ctx, getenvDefault("EMBED_MODEL", "embeddinggemma"), ch.Text)
 	require.NoError(t, err)
 
 	pt := vectorstore.PointFromChunk(h, vec2, map[string]any{
@@ -98,7 +98,7 @@ func TestQdrantEmbedAndSearch(t *testing.T) {
 	})
 	require.NoError(t, q.UpsertPoints(ctx, name, []vectorstore.Point{pt}))
 
-	qvec, err := emb.Embed(ctx, getenvDefault("EMBED_MODEL", "nomic-embed-text"), "как выставляют счета в кассу")
+	qvec, err := emb.Embed(ctx, getenvDefault("EMBED_MODEL", "embeddinggemma"), "как выставляют счета в кассу")
 	require.NoError(t, err)
 	hits, err := q.Search(ctx, name, qvec, 3)
 	require.NoError(t, err)

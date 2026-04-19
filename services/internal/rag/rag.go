@@ -14,10 +14,10 @@ import (
 
 // Engine ties stores and models.
 type Engine struct {
-	Embed      *embed.Client
-	LLM        *llm.Client
-	Qdrant     *vectorstore.Qdrant
-	Graph      *graph.Store
+	Embed      *embed.Client       // Ollama embedder
+	LLM        *llm.Client         // Ollama LLM
+	Qdrant     *vectorstore.Qdrant // Qdrant vector store
+	Graph      *graph.Store        // Neo4j graph store
 	EmbedModel string
 	GenModel   string
 	Collection string
@@ -41,33 +41,44 @@ func (e *Engine) Answer(ctx context.Context, userQuery string) (string, error) {
 	seen := map[string]struct{}{}
 	for _, h := range hits {
 		nodeID, _ := h.Payload["node_id"].(string)
-		path, _ := h.Payload["path"].(string)
 		text, _ := h.Payload["text"].(string)
-		if nodeID != "" {
-			if _, ok := seen[nodeID]; !ok {
-				seen[nodeID] = struct{}{}
-				nb, err := e.Graph.NeighborSummary(ctx, nodeID, 12)
-				if err == nil && strings.TrimSpace(nb) != "" {
-					ctxParts = append(ctxParts, fmt.Sprintf("Связи для %s: %s", nodeID, nb))
-				}
-			}
+		text = strings.TrimSpace(text)
+		if text == "" {
+			continue
 		}
-		ctxParts = append(ctxParts, fmt.Sprintf("Фрагмент (%s, %s):\n%s", nodeID, path, text))
+		if nodeID != "" {
+			if _, ok := seen[nodeID]; ok {
+				continue
+			}
+			seen[nodeID] = struct{}{}
+		}
+		ctxParts = append(ctxParts, text)
 	}
-	contextBlock := strings.Join(ctxParts, "\n\n")
+	contextBlock := strings.Join(ctxParts, "\n\n---\n\n")
+	system := strings.Join([]string{
+		"Ты — ассистент по базе знаний Edelweiss Pflegedienst (служба ухода на дому в Германии).",
+		"Правила ответа:",
+		"- Язык: русский, 2–8 предложений, разговорный тон, без канцелярита и без списков «анализ».",
+		"- Немецкие термины (Pflegegrad, Verordnung, Krankenkasse, Dienstplan и т.д.) не переводи насильно, оставляй в оригинале.",
+		"- НЕ перечисляй и НЕ упоминай: коды SUBJ-, UC-, PAIN-, AUTO-, AGENT-, ROAD-, DOC:, пути к файлам, «связи», INVOLVES, ноды графа.",
+		"- НЕ пиши заголовков и вступлений: «Вот анализ», «Результаты анализа», «Использованные идентификаторы», «В контексте».",
+		"- Если в тексте ниже нет ответа на вопрос — одно короткое предложение: в базе этого нет.",
+		"- Ответь только суть по вопросу, без пересказа всего текста.",
+	}, "\n")
 	prompt := strings.Join([]string{
-		"Ты ассистент по базе знаний Edelweiss Pflegedienst.",
-		"Отвечай по-русски. Немецкие термины (Verordnung, Pflegegrad, Krankenkasse и т.д.) оставляй в оригинале.",
-		"Опирайся только на предоставленный контекст. Если данных недостаточно — скажи об этом.",
-		"В конце ответа перечисли использованные идентификаторы (SUBJ-*, UC-*, PAIN-*, AUTO-*, AGENT-*, ROAD-*) из контекста.",
+		"Ответь на вопрос, опираясь только на фрагменты ниже.",
 		"",
-		"Вопрос пользователя:",
+		"Вопрос:",
 		userQuery,
 		"",
-		"Контекст:",
+		"Фрагменты из базы:",
 		contextBlock,
 	}, "\n")
-	return e.LLM.Generate(ctx, e.GenModel, prompt)
+	raw, err := e.LLM.GenerateWithSystem(ctx, e.GenModel, system, prompt)
+	if err != nil {
+		return "", err
+	}
+	return sanitizeBotAnswer(raw), nil
 }
 
 // BuildEngineFromConfig is a small helper for cmd wiring.

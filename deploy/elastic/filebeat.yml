@@ -1,0 +1,46 @@
+# Filebeat: ship Docker container logs to Elasticsearch.
+# Mounted at /usr/share/filebeat/filebeat.yml in the filebeat service.
+
+filebeat.inputs:
+  - type: container
+    paths:
+      - /var/lib/docker/containers/*/*.log
+
+processors:
+  - add_docker_metadata:
+      host: unix:///var/run/docker.sock
+
+  # Go services (matrix-bot, kg-ingestor) log JSON lines to stderr; decode for Kibana filters (edelweiss.msg, edelweiss.level, edelweiss.err).
+  # Slog JSON lines start with {"time": — avoids decoding Filebeat/Elastic JSON (different shape).
+  - decode_json_fields:
+      fields: ["message"]
+      target: "edelweiss"
+      overwrite_keys: false
+      add_error_key: true
+      when:
+        regexp:
+          message: '^\{"time":'
+
+# Prefer project containers when the Compose project name is "edelweiss" (see compose.yml: name).
+  - drop_event:
+      when:
+        not:
+          equals:
+            container.labels.com_docker_compose_project: edelweiss
+
+setup.template.settings:
+  index.number_of_replicas: 0
+
+setup.ilm.enabled: true
+
+setup.kibana:
+  host: http://kibana:5601
+
+# Set to true after stack is up: filebeat setup --dashboards (from a one-off container).
+setup.dashboards.enabled: false
+
+output.elasticsearch:
+  hosts: ["http://elasticsearch:9200"]
+
+logging.level: info
+logging.to_stderr: true

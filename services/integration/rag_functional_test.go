@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"git.produktor.io/edelweiss/docs/services/internal/config"
 	"git.produktor.io/edelweiss/docs/services/internal/docsparse"
@@ -20,12 +21,20 @@ import (
 	"github.com/testcontainers/testcontainers-go/modules/qdrant"
 )
 
-// TestRAGFunctional runs ingest + query against real Ollama when RUN_RAG_FUNCTIONAL=1.
+const defaultGenModelRAGTest = "cajina/gemma4_e2b-q4_k_s:v01"
+
+// TestRAGFunctional runs full ingest + RAG against real Ollama when RUN_RAG_FUNCTIONAL=1.
+// No Matrix/Synapse: only Neo4j + Qdrant + Ollama (dialogue subtest simulates multi-turn Q&A).
 func TestRAGFunctional(t *testing.T) {
-	if os.Getenv("RUN_RAG_FUNCTIONAL") != "1" {
-		t.Skip("set RUN_RAG_FUNCTIONAL=1 to run (needs docker + Ollama + time)")
-	}
+	//if os.Getenv("RUN_RAG_FUNCTIONAL") != "1" {
+	//	t.Skip("set RUN_RAG_FUNCTIONAL=1 to run (needs docker + Ollama + time)")
+	//}
 	ctx := context.Background()
+
+	t.Setenv("HTTP_TIMEOUT", "600s")
+	if os.Getenv("GEN_MODEL") == "" {
+		t.Setenv("GEN_MODEL", defaultGenModelRAGTest)
+	}
 
 	ncont, err := neo4j.Run(ctx, "neo4j:5-community", neo4j.WithAdminPassword("rag-func-test"))
 	require.NoError(t, err)
@@ -61,7 +70,7 @@ func TestRAGFunctional(t *testing.T) {
 	emb := embed.New(cfg.OllamaURL, cfg.HTTPTimeout)
 	probe, err := emb.Embed(ctx, cfg.EmbedModel, "probe")
 	if err != nil {
-		t.Skipf("ollama: %v", err)
+		t.Skipf("ollama embed: %v", err)
 	}
 	dim := uint64(len(probe))
 	q := vectorstore.New(cfg.QdrantURL, cfg.HTTPTimeout)
@@ -82,7 +91,42 @@ func TestRAGFunctional(t *testing.T) {
 	llmClient := llm.New(cfg.OllamaURL, cfg.HTTPTimeout)
 	engine := rag.BuildEngineFromConfig(emb, llmClient, q, gstore, cfg.EmbedModel, cfg.GenModel, cfg.QdrantCollection)
 
-	ans, err := engine.Answer(ctx, "Как устроена помесячная Abrechnung (UC-07)?")
-	require.NoError(t, err)
-	require.True(t, strings.Contains(strings.ToUpper(ans), "UC-07") || strings.Contains(ans, "Abrechnung"))
+	t.Run("single_query_uc07", func(t *testing.T) {
+		cctx, cancel := context.WithTimeout(ctx, 15*time.Minute)
+		defer cancel()
+		ans, err := engine.Answer(cctx, "Как устроена помесячная Abrechnung (UC-07)?")
+		require.NoError(t, err)
+		require.True(t, strings.Contains(strings.ToUpper(ans), "UC-07") || strings.Contains(ans, "Abrechnung"))
+	})
+
+	t.Run("dialogue_multiturn_without_matrix", func(t *testing.T) {
+		// Sequential RAG turns (no Synapse): each question is independent; simulates a chat check.
+		turns := []struct {
+			name  string
+			query string
+			min   int
+		}{
+			{"turn1_uc01", "Кратко: что описывает кейс UC-01?", 80},
+			{"turn2_subjects", "Какие роли SUBJ упоминаются рядом с intake в базе?", 60},
+			{"turn3_term", "Что такое Pflegegrad одним предложением по глоссарию?", 40},
+		}
+		for _, step := range turns {
+			step := step
+			t.Run(step.name, func(t *testing.T) {
+				cctx, cancel := context.WithTimeout(ctx, 15*time.Minute)
+				defer cancel()
+				ans, err := engine.Answer(cctx, step.query)
+				require.NoError(t, err, step.name)
+				trim := strings.TrimSpace(ans)
+				require.GreaterOrEqual(t, len(trim), step.min, "answer too short: %q", truncateForLog(trim, 200))
+			})
+		}
+	})
+}
+
+func truncateForLog(s string, max int) string {
+	if len(s) <= max {
+		return s
+	}
+	return s[:max] + "…"
 }

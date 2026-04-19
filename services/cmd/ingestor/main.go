@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"git.produktor.io/edelweiss/docs/services/internal/config"
 	"git.produktor.io/edelweiss/docs/services/internal/docsparse"
@@ -30,16 +31,21 @@ func run() int {
 		return 1
 	}
 	log := slogx.New(cfg.MatrixDebug)
+	runStart := time.Now()
 
+	parseStart := time.Now()
 	pr, err := docsparse.WalkDocs(cfg.DocsRoot)
 	if err != nil {
 		log.Error("walk docs", slog.Any("err", err), slog.String("root", cfg.DocsRoot))
 		return 1
 	}
-	log.Info("parsed corpus",
+	log.Info("ingest stage",
+		slog.String("event", "ingest_parsed"),
+		slog.String("service", "kg-ingestor"),
 		slog.Int("nodes", len(pr.Nodes)),
 		slog.Int("edges", len(pr.Edges)),
 		slog.Int("chunks", len(pr.Chunks)),
+		slog.Int64("latency_ms", time.Since(parseStart).Milliseconds()),
 	)
 
 	gstore, err := graph.NewStore(ctx, cfg.Neo4jURI, cfg.Neo4jUser, cfg.Neo4jPassword)
@@ -50,10 +56,18 @@ func run() int {
 	defer func() {
 		_ = gstore.Close(ctx)
 	}()
+	graphStart := time.Now()
 	if err := gstore.WriteCorpus(ctx, pr); err != nil {
 		log.Error("write graph", slog.Any("err", err))
 		return 1
 	}
+	log.Info("ingest stage",
+		slog.String("event", "ingest_graph_written"),
+		slog.String("service", "kg-ingestor"),
+		slog.Int("nodes", len(pr.Nodes)),
+		slog.Int("edges", len(pr.Edges)),
+		slog.Int64("latency_ms", time.Since(graphStart).Milliseconds()),
+	)
 
 	emb := embed.New(cfg.OllamaURL, cfg.HTTPTimeout)
 	probe, err := emb.Embed(ctx, cfg.EmbedModel, "dimension probe")
@@ -69,11 +83,13 @@ func run() int {
 	}
 
 	const batch = 64
+	embedStart := time.Now()
 	for i := 0; i < len(pr.Chunks); i += batch {
 		end := i + batch
 		if end > len(pr.Chunks) {
 			end = len(pr.Chunks)
 		}
+		batchStart := time.Now()
 		var points []vectorstore.Point
 		for _, ch := range pr.Chunks[i:end] {
 			h := docsparse.ChunkContentHash(ch)
@@ -98,8 +114,23 @@ func run() int {
 			log.Error("qdrant upsert", slog.Any("err", err))
 			return 1
 		}
-		log.Info("upserted batch", slog.Int("from", i), slog.Int("to", end))
+		log.Info("ingest stage",
+			slog.String("event", "ingest_batch_upserted"),
+			slog.String("service", "kg-ingestor"),
+			slog.Int("from", i),
+			slog.Int("to", end),
+			slog.Int("count", end-i),
+			slog.Int64("latency_ms", time.Since(batchStart).Milliseconds()),
+		)
 	}
-	log.Info("ingest complete")
+	log.Info("ingest stage",
+		slog.String("event", "ingest_complete"),
+		slog.String("service", "kg-ingestor"),
+		slog.Int("nodes", len(pr.Nodes)),
+		slog.Int("edges", len(pr.Edges)),
+		slog.Int("chunks", len(pr.Chunks)),
+		slog.Int64("embed_latency_ms", time.Since(embedStart).Milliseconds()),
+		slog.Int64("latency_ms", time.Since(runStart).Milliseconds()),
+	)
 	return 0
 }

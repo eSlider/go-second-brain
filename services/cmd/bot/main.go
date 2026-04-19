@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	"git.produktor.io/edelweiss/docs/services/internal/config"
 	"git.produktor.io/edelweiss/docs/services/internal/embed"
@@ -53,17 +54,12 @@ func run() int {
 	emb := embed.New(cfg.OllamaURL, cfg.HTTPTimeout)
 	llmClient := llm.New(cfg.OllamaURL, cfg.HTTPTimeout)
 	qdr := vectorstore.New(cfg.QdrantURL, cfg.HTTPTimeout)
-	probe, err := emb.Embed(ctx, cfg.EmbedModel, "dimension probe")
+	dim, err := waitForRAGBackend(ctx, log, emb, qdr, cfg.EmbedModel, cfg.QdrantCollection)
 	if err != nil {
-		log.Error("ollama embed probe", slog.Any("err", err), slog.String("model", cfg.EmbedModel))
+		log.Error("rag backend", slog.Any("err", err))
 		return 1
 	}
-	dim := uint64(len(probe))
-	if err := qdr.EnsureCollection(ctx, cfg.QdrantCollection, dim); err != nil {
-		log.Error("qdrant ensure collection", slog.Any("err", err), slog.String("collection", cfg.QdrantCollection))
-		return 1
-	}
-	log.Info("rag backend ready", slog.String("collection", cfg.QdrantCollection), slog.Int("embed_dim", len(probe)))
+	log.Info("rag backend ready", slog.String("collection", cfg.QdrantCollection), slog.Int("embed_dim", dim))
 
 	engine := rag.BuildEngineFromConfig(emb, llmClient, qdr, gstore, cfg.EmbedModel, cfg.GenModel, cfg.QdrantCollection)
 
@@ -101,17 +97,38 @@ func run() int {
 			return
 		}
 		query := queryFromMessage(body, prefix)
+		started := time.Now()
 		ans, err := engine.Answer(c, query)
+		latency := time.Since(started)
+
+		base := []any{
+			slog.String("event", "bot_query"),
+			slog.String("service", "matrix-bot"),
+			slog.String("room_id", string(roomID)),
+			slog.String("sender", string(sender)),
+			slog.Int("query_len", len(query)),
+			slog.Int64("latency_ms", latency.Milliseconds()),
+		}
 		if err != nil {
-			log.Error("rag", slog.Any("err", err))
+			log.Error("bot query failed", append(base,
+				slog.Bool("ok", false),
+				slog.String("err", err.Error()),
+			)...)
 			_ = bot.SendText(c, roomID, "Ошибка при генерации ответа. Проверьте Ollama и индекс.")
 			return
 		}
 		md := ans
 		html := matrix.MarkdownToHTML(md)
-		if err := bot.SendReply(c, roomID, md, html, sender); err != nil {
-			log.Error("send reply", slog.Any("err", err))
+		sendErr := bot.SendReply(c, roomID, md, html, sender)
+		fields := append(base,
+			slog.Bool("ok", sendErr == nil),
+			slog.Int("answer_len", len(ans)),
+		)
+		if sendErr != nil {
+			log.Error("bot reply failed", append(fields, slog.String("err", sendErr.Error()))...)
+			return
 		}
+		log.Info("bot query answered", fields...)
 	})
 
 	if err := bot.Run(ctx); err != nil && !errors.Is(err, context.Canceled) {
@@ -123,6 +140,63 @@ func run() int {
 		return 1
 	}
 	return 0
+}
+
+// waitForRAGBackend blocks until Ollama embeddings and Qdrant collection are reachable.
+// Retries forever with exponential backoff (capped) so the container does not exit-restart
+// while Neo4j/Qdrant/Ollama start up.
+func waitForRAGBackend(
+	ctx context.Context,
+	log *slog.Logger,
+	emb *embed.Client,
+	qdr *vectorstore.Qdrant,
+	embedModel, collection string,
+) (int, error) {
+	backoff := 2 * time.Second
+	const maxBackoff = 60 * time.Second
+	attempt := 0
+	for {
+		attempt++
+		probe, err := emb.Embed(ctx, embedModel, "dimension probe")
+		if err != nil {
+			log.Warn("ollama not ready, retrying",
+				slog.Any("err", err), slog.String("model", embedModel),
+				slog.Int("attempt", attempt), slog.Duration("next_in", backoff))
+			if err := sleepCtx(ctx, backoff); err != nil {
+				return 0, err
+			}
+			if backoff < maxBackoff {
+				nb := backoff * 2
+				if nb > maxBackoff {
+					nb = maxBackoff
+				}
+				backoff = nb
+			}
+			continue
+		}
+		dim := len(probe)
+		if err := qdr.EnsureCollection(ctx, collection, uint64(dim)); err != nil {
+			log.Warn("qdrant not ready, retrying",
+				slog.Any("err", err), slog.String("collection", collection),
+				slog.Int("attempt", attempt), slog.Duration("next_in", backoff))
+			if err := sleepCtx(ctx, backoff); err != nil {
+				return 0, err
+			}
+			continue
+		}
+		return dim, nil
+	}
+}
+
+func sleepCtx(ctx context.Context, d time.Duration) error {
+	t := time.NewTimer(d)
+	defer t.Stop()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-t.C:
+		return nil
+	}
 }
 
 // queryFromMessage uses the full message as the RAG query; if it starts with the command prefix
