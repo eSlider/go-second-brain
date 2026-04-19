@@ -56,3 +56,73 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+  neo4j:
+    image: neo4j:5-community
+    profiles: [kg, bot]
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:-edelweiss}
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - neo4j-data:/data
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    profiles: [kg, bot]
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant-data:/qdrant/storage
+
+  kg-ingestor:
+    build:
+      context: ./services
+      dockerfile: Dockerfile
+      target: ingestor
+    image: edelweiss-kg-ingestor:latest
+    profiles: [kg]
+    depends_on:
+      - neo4j
+      - qdrant
+    env_file:
+      - .env
+    environment:
+      DOCS_ROOT: /repo/docs/project
+      NEO4J_URI: bolt://neo4j:7687
+      QDRANT_URL: http://qdrant:6333
+      OLLAMA_URL: http://host.docker.internal:11434
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - .:/repo:ro
+    restart: "no"
+
+  matrix-bot:
+    build:
+      context: ./services
+      dockerfile: Dockerfile
+      target: bot
+    image: edelweiss-matrix-bot:latest
+    profiles: [bot]
+    depends_on:
+      - neo4j
+      - qdrant
+    env_file:
+      - .env
+    environment:
+      NEO4J_URI: bolt://neo4j:7687
+      QDRANT_URL: http://qdrant:6333
+      OLLAMA_URL: http://host.docker.internal:11434
+      MATRIX_BOT_DB: /data/matrix-bot.db
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - matrix-bot-data:/data
+    restart: unless-stopped
+
+volumes:
+  neo4j-data:
+  qdrant-data:
+  matrix-bot-data:

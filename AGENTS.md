@@ -92,7 +92,7 @@ README.md
 - **create-skill** — если понадобится специализированный skill (например, «конвертер STT-транскрипта в report»).
 - **jochen-partner-context** — только как шаблон работы с транскриптами интервью; для Edelweiss не применяется.
 
-Golang-skills и подобные — неактуальны (кода в проекте пока нет).
+Код индексации и Matrix-бота — в [`services/`](./services/); схема стека и контрибьютинг — в [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## Запрещено
 

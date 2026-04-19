@@ -67,6 +67,20 @@ edelweiss/
 
 См. [инструкции для skills/агентов](./AGENTS.md): что читать в первую очередь, как обновлять документы, какие конвенции использовать.
 
+## Knowledge graph и Matrix-бот (опционально)
+
+Поверх `docs/project/` можно поднять стек **Neo4j + Qdrant + бот в Matrix** (код в [`services/`](./services/), образы в [`compose.yml`](./compose.yml)). **Ollama** ожидается на хосте (`OLLAMA_URL`, по умолчанию `http://127.0.0.1:11434`), в контейнерах доступ через `host.docker.internal`.
+
+- Шаблон переменных: [.env.example](./.env.example) (скопируйте в `.env`).
+- Поднять графовые сервисы: `make kg-up` или `docker compose --profile kg up -d neo4j qdrant`.
+- Индексация документации: `make ingest` или `docker compose --profile kg run --rm kg-ingestor`.
+- Запуск бота: `make bot` или `docker compose --profile bot up -d matrix-bot` (после индексации). В комнате отвечает на сообщения с префиксом `!edel` (см. `BOT_COMMAND_PREFIX`) или с упоминанием `@<localpart>` бота.
+- Neo4j Browser: `http://localhost:7474` (логин `neo4j`, пароль из `NEO4J_PASSWORD`).
+
+Интеграционные тесты (Docker + при необходимости Ollama на localhost): `make test-integration`.
+
+Техническая схема, окружение и соглашения по коду — в [CONTRIBUTING.md](./CONTRIBUTING.md).
+
 ## Статус
 
 Живой документ. При появлении новых интервью — кладём `.stt.txt` в `docs/`, после обработки — `*.md` в `docs/reports/`, а обобщения — в `docs/project/`.

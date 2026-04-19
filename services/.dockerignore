@@ -1,0 +1,4 @@
+.git
+*.md
+integration/
+**/*_test.go

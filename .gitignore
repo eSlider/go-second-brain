@@ -9,3 +9,7 @@
 .mkdocs_cache/
 *.pyc
 .DS_Store
+
+# Локальные секреты (см. .env.example)
+.env
+.env
