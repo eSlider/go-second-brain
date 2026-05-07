@@ -84,6 +84,12 @@ func (r *Runtime) Run(ctx context.Context) error {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+		const (
+			voiceThreshold = 0.012 // tune for conversational mic noise floor
+			pauseToCutMS   = 700
+		)
+		speaking := false
+		silenceMS := 0
 		for chunk := range micChunks {
 			micRaw.Write(chunk)
 			_ = r.perf.Event("mic_chunk_captured", map[string]any{"bytes": len(chunk)})
@@ -91,23 +97,29 @@ func (r *Runtime) Run(ctx context.Context) error {
 				errCh <- err
 				return
 			}
-		}
-	}()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		ticker := time.NewTicker(2 * time.Second)
-		defer ticker.Stop()
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-ticker.C:
+			// Pause-aware turn detection: cut utterance on conversational silence.
+			level := rmsLevelPCM16(chunk)
+			chunkMS := r.cfg.AssistantChunkMS
+			if chunkMS <= 0 {
+				chunkMS = 100
+			}
+			if level >= voiceThreshold {
+				speaking = true
+				silenceMS = 0
+				continue
+			}
+			if !speaking {
+				continue
+			}
+			silenceMS += chunkMS
+			if silenceMS >= pauseToCutMS {
 				if err := stt.SendEndTurn(ctx); err != nil && ctx.Err() == nil {
 					errCh <- err
 					return
 				}
+				_ = r.perf.Event("stt_end_turn_sent", map[string]any{"silence_ms": silenceMS})
+				speaking = false
+				silenceMS = 0
 			}
 		}
 	}()
@@ -153,19 +165,27 @@ func (r *Runtime) Run(ctx context.Context) error {
 				return
 			}
 			ttsMu.Lock()
-			start := time.Now()
+			finalReceivedAt := time.Now()
 			audioChunks := make(chan []byte, 32)
 			ttsErr := make(chan error, 1)
 			var ttsRaw bytes.Buffer
+			_ = r.perf.Event("tts_request_started", map[string]any{"text_len": len(ev.Text)})
 			go func() {
 				ttsErr <- tts.Stream(ctx, ev.Text, audioChunks)
 				close(audioChunks)
 			}()
 			firstByteLogged := false
+			var firstByteAt time.Time
+			var playbackStartAt time.Time
 			for chunk := range audioChunks {
 				if !firstByteLogged {
 					firstByteLogged = true
-					_ = r.perf.Event("tts_first_byte", map[string]any{"latency_ms": time.Since(start).Milliseconds()})
+					firstByteAt = time.Now()
+					firstByteDur := firstByteAt.Sub(finalReceivedAt)
+					_ = r.perf.Event("tts_first_byte", map[string]any{
+						"latency_ms":    firstByteDur.Milliseconds(),
+						"latency_human": humanDuration(firstByteDur),
+					})
 				}
 				ttsRaw.Write(chunk)
 				if err := playback.WritePCM(chunk); err != nil {
@@ -173,14 +193,67 @@ func (r *Runtime) Run(ctx context.Context) error {
 					errCh <- err
 					return
 				}
+				if playbackStartAt.IsZero() {
+					playbackStartAt = time.Now()
+				}
 			}
 			if err := <-ttsErr; err != nil {
 				ttsMu.Unlock()
 				errCh <- err
 				return
 			}
-			_ = r.perf.Event("playback_started", map[string]any{"text_len": len(ev.Text)})
-			_ = r.perf.Event("end_to_end_ms", map[string]any{"value": time.Since(start).Milliseconds()})
+			streamDoneAt := time.Now()
+			synthesisDur := streamDoneAt.Sub(finalReceivedAt)
+			_ = r.perf.Event("tts_stream_completed", map[string]any{
+				"latency_ms":    synthesisDur.Milliseconds(),
+				"latency_human": humanDuration(synthesisDur),
+				"bytes":         ttsRaw.Len(),
+			})
+			if !playbackStartAt.IsZero() {
+				playbackStartDur := playbackStartAt.Sub(finalReceivedAt)
+				_ = r.perf.Event("playback_started", map[string]any{
+					"text_len":              len(ev.Text),
+					"latency_from_final_ms": playbackStartDur.Milliseconds(),
+					"latency_human":         humanDuration(playbackStartDur),
+				})
+			}
+			_ = r.perf.Event("playback_completed", map[string]any{
+				"latency_ms":    synthesisDur.Milliseconds(),
+				"latency_human": humanDuration(synthesisDur),
+				"bytes":         ttsRaw.Len(),
+			})
+			_ = r.perf.Event("end_to_end_ms", map[string]any{
+				"value":       synthesisDur.Milliseconds(),
+				"value_human": humanDuration(synthesisDur),
+			})
+			ttsFirstByteMS := int64(-1)
+			if !firstByteAt.IsZero() {
+				ttsFirstByteMS = firstByteAt.Sub(finalReceivedAt).Milliseconds()
+			}
+			ttsFirstByteHuman := "n/a"
+			if ttsFirstByteMS >= 0 {
+				ttsFirstByteHuman = humanDuration(time.Duration(ttsFirstByteMS) * time.Millisecond)
+			}
+			playbackStartMS := int64(-1)
+			if !playbackStartAt.IsZero() {
+				playbackStartMS = playbackStartAt.Sub(finalReceivedAt).Milliseconds()
+			}
+			playbackStartHuman := "n/a"
+			if playbackStartMS >= 0 {
+				playbackStartHuman = humanDuration(time.Duration(playbackStartMS) * time.Millisecond)
+			}
+			r.log.Info("assistant timing",
+				slog.Int("text_len", len(ev.Text)),
+				slog.Int64("tts_first_byte_ms", ttsFirstByteMS),
+				slog.String("tts_first_byte", ttsFirstByteHuman),
+				slog.Int64("tts_synthesis_ms", synthesisDur.Milliseconds()),
+				slog.String("tts_synthesis", humanDuration(synthesisDur)),
+				slog.Int64("playback_start_ms", playbackStartMS),
+				slog.String("playback_start", playbackStartHuman),
+				slog.Int64("playback_done_ms", synthesisDur.Milliseconds()),
+				slog.String("playback_done", humanDuration(synthesisDur)),
+				slog.Int("audio_bytes", ttsRaw.Len()),
+			)
 			path := store.NewFilePath("opus")
 			ok := opusSaver.Enqueue(ttsRaw.Bytes(), r.cfg.AssistantSampleRate, path)
 			if !ok {
