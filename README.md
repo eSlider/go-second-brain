@@ -83,6 +83,32 @@ edelweiss/
 
 Техническая схема, окружение и соглашения по коду — в [CONTRIBUTING.md](./CONTRIBUTING.md).
 
+## Voice assistant MVP (CLI, low latency)
+
+В `services/cmd/assistant` добавлен MVP-цикл **STT -> TTS** для русского языка:
+
+- **STT**: Inworld streaming WebSocket (`base`, voice profile enabled).
+- **TTS**: Cartesia Sonic 3.5 (streaming).
+- **I/O**: default PipeWire input/output устройства.
+- **Хранилище**: TTS audio в `var/tss/{id}-{time}.opus`, mic audio в `var/audio-rec/{id}-{time}.opus`, STT тексты в `var/stt/{id}-{time}.txt`.
+- **Метрики**: JSONL в `var/logs/performance.jsonl`.
+
+Переменные окружения (в `.env`):
+
+- `INWORLD_API_KEY`, `INWORLD_STT_MODEL` (default `base`)
+- `CARTESIA_API_KEY`, `CARTESIA_MODEL_ID` (default `sonic-3.5`), `CARTESIA_VOICE_ID`
+- `ASSISTANT_AUDIO_SAMPLE_RATE` (default `16000`)
+- `ASSISTANT_CHUNK_MS` (default `100`)
+- `ASSISTANT_TTS_DIR` (default `var/tss`)
+- `ASSISTANT_AUDIO_REC_DIR` (default `var/audio-rec`)
+- `ASSISTANT_STT_DIR` (default `var/stt`)
+- `ASSISTANT_PERF_LOG` (default `var/logs/performance.jsonl`)
+
+Локальный запуск:
+
+- `cd services`
+- `go run ./cmd/assistant`
+
 ## Статус
 
 Живой документ. При появлении новых интервью — кладём `.stt.txt` в `docs/`, после обработки — `*.md` в `docs/reports/`, а обобщения — в `docs/project/`.
