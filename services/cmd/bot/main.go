@@ -73,25 +73,20 @@ func run() int {
 	}
 	log.Info("rag backend ready", slog.String("collection", cfg.Qdrant.Collection), slog.Int("embed_dim", dim))
 
-	engine := rag.BuildEngineFromConfig(llmCli, qdr, gstore, cfg.Embedding.Model, cfg.Generator.Model, cfg.Qdrant.Collection)
-
-	bcfg := matrix.Config{
+	engine := rag.BuildEngineFromConfig(llmCli, qdr, cfg.Embedding.Model, cfg.Generator.Model, cfg.Qdrant.Collection)
+	bot, err := matrix.NewBot(matrix.Config{
 		Homeserver: cfg.Matrix.Homeserver(),
 		Username:   cfg.Matrix.ResolvedUser(),
 		Password:   cfg.Matrix.ResolvedPassword(),
 		Database:   cfg.Matrix.Bot.DB,
 		Debug:      cfg.Matrix.Debug,
-	}
-	bot, err := matrix.NewBot(bcfg)
+	})
 	if err != nil {
 		log.Error("matrix bot", slog.Any("err", err))
 		return 1
 	}
 
-	prefix := strings.TrimSpace(cfg.Commands.Command.Prefix)
-	if prefix == "" {
-		prefix = "!edel"
-	}
+	prefix := cfg.Commands.Command.Prefix
 
 	bot.OnMessage(func(c context.Context, roomID id.RoomID, sender id.UserID, msg *event.MessageEventContent) {
 		if msg == nil {

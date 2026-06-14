@@ -66,27 +66,19 @@ func (c *Config) Load() error {
 
 var durationType = reflect.TypeOf(time.Duration(0))
 
-func stringToDurationHook(from reflect.Type, to reflect.Type, data any) (any, error) {
-	if to != durationType || from == nil || data == nil {
+func stringToDurationHook(_ reflect.Type, to reflect.Type, data any) (any, error) {
+	if to != durationType || data == nil {
 		return data, nil
 	}
-	if from.Kind() == reflect.String {
-		s := strings.TrimSpace(data.(string))
-		if s == "" {
-			return time.Duration(0), nil
-		}
-		d, err := time.ParseDuration(s)
-		if err != nil {
-			return time.Duration(0), nil
-		}
-		return d, nil
+	s, ok := data.(string)
+	if !ok || s == "" {
+		return data, nil
 	}
-	return data, nil
+	d, _ := time.ParseDuration(s) // ponytail: ignores invalid duration strings, falling back to 0s
+	return d, nil
 }
 
 func normalize(cfg *Config) {
-	cfg.Ollama.URL = strings.TrimRight(strings.TrimSpace(cfg.Ollama.URL), "/")
-	cfg.Matrix.API.URL = strings.TrimRight(strings.TrimSpace(cfg.Matrix.API.URL), "/")
 	cfg.Commands.Command.Prefix = strings.TrimSpace(cfg.Commands.Command.Prefix)
 	if cfg.Commands.Command.Prefix == "" {
 		cfg.Commands.Command.Prefix = "!edel"

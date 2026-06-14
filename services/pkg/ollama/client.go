@@ -24,8 +24,7 @@ func New(_ context.Context, cfg *Config) (*Client, error) {
 	if t <= 0 {
 		t = 120 * time.Second
 	}
-	base := strings.TrimRight(strings.TrimSpace(cfg.URL), "/")
-	return &Client{HTTP: httpjson.New(base, t)}, nil
+	return &Client{HTTP: httpjson.New(cfg.URL, t)}, nil
 }
 
 // Close releases resources (currently no pooled resources; satisfies lifecycle pattern).

@@ -25,8 +25,7 @@ func New(_ context.Context, cfg *Config, timeout time.Duration) (*Client, error)
 	if timeout <= 0 {
 		timeout = 120 * time.Second
 	}
-	base := strings.TrimRight(strings.TrimSpace(cfg.URL), "/")
-	return &Client{HTTP: httpjson.New(base, timeout)}, nil
+	return &Client{HTTP: httpjson.New(cfg.URL, timeout)}, nil
 }
 
 // Close is a lifecycle hook for parity with other clients (no pooled resources yet).

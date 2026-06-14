@@ -22,4 +22,5 @@ services/var/stt/
 services/var/logs/
 services/var/run/
 
-.idea
+.ideaservices/bot
+services/ingestor

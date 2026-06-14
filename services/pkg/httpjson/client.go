@@ -19,12 +19,13 @@ type Client struct {
 }
 
 // New returns a Client with explicit timeout (never zero).
+// Normalized baseURL (no trailing slash).
 func New(baseURL string, timeout time.Duration) *Client {
 	if timeout <= 0 {
 		timeout = 30 * time.Second
 	}
 	return &Client{
-		BaseURL: strings.TrimRight(baseURL, "/"),
+		BaseURL: strings.TrimRight(strings.TrimSpace(baseURL), "/"),
 		HTTP: &http.Client{
 			Timeout: timeout,
 		},
@@ -33,75 +34,12 @@ func New(baseURL string, timeout time.Duration) *Client {
 
 // PostJSON posts JSON body and decodes JSON response into out.
 func (c *Client) PostJSON(ctx context.Context, path string, body any, out any) error {
-	u := c.BaseURL + path
-	b, err := json.Marshal(body)
-	if err != nil {
-		return fmt.Errorf("httpjson: marshal: %w", err)
-	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, bytes.NewReader(b))
-	if err != nil {
-		return fmt.Errorf("httpjson: request: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := c.HTTP.Do(req)
-	if err != nil {
-		return fmt.Errorf("httpjson: do: %w", err)
-	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
-	raw, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("httpjson: read body: %w", err)
-	}
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("httpjson: %s: %s", resp.Status, truncate(string(raw), 512))
-	}
-	if out == nil {
-		return nil
-	}
-	if len(raw) == 0 || string(raw) == "null" {
-		return nil
-	}
-	if err := json.Unmarshal(raw, out); err != nil {
-		return fmt.Errorf("httpjson: decode: %w", err)
-	}
-	return nil
+	return c.do(ctx, http.MethodPost, path, body, out)
 }
 
 // PutJSON sends PUT with JSON body.
 func (c *Client) PutJSON(ctx context.Context, path string, body any, out any) error {
-	u := c.BaseURL + path
-	b, err := json.Marshal(body)
-	if err != nil {
-		return fmt.Errorf("httpjson: marshal: %w", err)
-	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPut, u, bytes.NewReader(b))
-	if err != nil {
-		return fmt.Errorf("httpjson: request: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := c.HTTP.Do(req)
-	if err != nil {
-		return fmt.Errorf("httpjson: do: %w", err)
-	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
-	raw, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("httpjson: read body: %w", err)
-	}
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("httpjson: %s: %s", resp.Status, truncate(string(raw), 512))
-	}
-	if out == nil || len(raw) == 0 {
-		return nil
-	}
-	if err := json.Unmarshal(raw, out); err != nil {
-		return fmt.Errorf("httpjson: decode: %w", err)
-	}
-	return nil
+	return c.do(ctx, http.MethodPut, path, body, out)
 }
 
 // PostRaw posts JSON and returns the raw response body.
@@ -120,9 +58,7 @@ func (c *Client) PostRaw(ctx context.Context, path string, body any) ([]byte, er
 	if err != nil {
 		return nil, fmt.Errorf("httpjson: do: %w", err)
 	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
+	defer func() { _ = resp.Body.Close() }()
 	raw, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("httpjson: read body: %w", err)
@@ -135,18 +71,32 @@ func (c *Client) PostRaw(ctx context.Context, path string, body any) ([]byte, er
 
 // GetJSON GETs and decodes JSON.
 func (c *Client) GetJSON(ctx context.Context, path string, out any) error {
+	return c.do(ctx, http.MethodGet, path, nil, out)
+}
+
+func (c *Client) do(ctx context.Context, method, path string, body any, out any) error {
 	u := c.BaseURL + path
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+	var r io.Reader
+	if body != nil {
+		b, err := json.Marshal(body)
+		if err != nil {
+			return fmt.Errorf("httpjson: marshal: %w", err)
+		}
+		r = bytes.NewReader(b)
+	}
+	req, err := http.NewRequestWithContext(ctx, method, u, r)
 	if err != nil {
 		return fmt.Errorf("httpjson: request: %w", err)
+	}
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
 	}
 	resp, err := c.HTTP.Do(req)
 	if err != nil {
 		return fmt.Errorf("httpjson: do: %w", err)
 	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
+	defer func() { _ = resp.Body.Close() }()
+
 	raw, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("httpjson: read body: %w", err)
@@ -154,7 +104,7 @@ func (c *Client) GetJSON(ctx context.Context, path string, out any) error {
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return fmt.Errorf("httpjson: %s: %s", resp.Status, truncate(string(raw), 512))
 	}
-	if out == nil {
+	if out == nil || len(raw) == 0 || string(raw) == "null" {
 		return nil
 	}
 	if err := json.Unmarshal(raw, out); err != nil {

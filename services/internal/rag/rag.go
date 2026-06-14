@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	"git.produktor.io/edelweiss/docs/services/internal/graph"
 	"git.produktor.io/edelweiss/docs/services/pkg/ollama"
 	"git.produktor.io/edelweiss/docs/services/pkg/qdrant"
 )
@@ -15,7 +14,6 @@ import (
 type Engine struct {
 	Ollama     *ollama.Client
 	Qdrant     *qdrant.Client
-	Graph      *graph.Store
 	EmbedModel string
 	GenModel   string
 	Collection string
@@ -79,17 +77,15 @@ func (e *Engine) Answer(ctx context.Context, userQuery string) (string, error) {
 	return sanitizeBotAnswer(raw), nil
 }
 
-// BuildEngine wires shared Ollama + Qdrant + graph accessors for cmds.
+// BuildEngine wires shared Ollama + Qdrant accessors for cmds.
 func BuildEngineFromConfig(
 	ollamaClient *ollama.Client,
 	qdr *qdrant.Client,
-	g *graph.Store,
 	embedModel, genModel, collection string,
 ) *Engine {
 	return &Engine{
 		Ollama:     ollamaClient,
 		Qdrant:     qdr,
-		Graph:      g,
 		EmbedModel: embedModel,
 		GenModel:   genModel,
 		Collection: collection,

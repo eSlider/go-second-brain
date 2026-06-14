@@ -91,7 +91,7 @@ func TestRAGFunctional(t *testing.T) {
 		require.NoError(t, q.UpsertPoints(ctx, cfg.Qdrant.Collection, []qdrantpkg.Point{pt}))
 	}
 
-	engine := rag.BuildEngineFromConfig(llmCli, q, gstore, cfg.Embedding.Model, cfg.Generator.Model, cfg.Qdrant.Collection)
+	engine := rag.BuildEngineFromConfig(llmCli, q, cfg.Embedding.Model, cfg.Generator.Model, cfg.Qdrant.Collection)
 
 	t.Run("single_query_uc07", func(t *testing.T) {
 		cctx, cancel := context.WithTimeout(ctx, 15*time.Minute)
