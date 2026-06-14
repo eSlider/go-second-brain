@@ -24,7 +24,7 @@ func rmsLevelPCM16(pcm []byte) float64 {
 	}
 	// sqrt without importing math package for tiny hot path.
 	z := mean
-	for i := 0; i < 6; i++ {
+	for range 6 {
 		z -= (z*z - mean) / (2 * z)
 	}
 	if z < 0 {

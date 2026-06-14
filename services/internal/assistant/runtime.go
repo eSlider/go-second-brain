@@ -9,15 +9,17 @@ import (
 	"time"
 
 	"git.produktor.io/edelweiss/docs/services/internal/config"
+	"git.produktor.io/edelweiss/docs/services/pkg/cartesia"
+	"git.produktor.io/edelweiss/docs/services/pkg/inworld"
 )
 
 type Runtime struct {
-	cfg  config.Config
+	cfg  *config.Config
 	log  *slog.Logger
 	perf *PerfLogger
 }
 
-func NewRuntime(cfg config.Config, log *slog.Logger, perf *PerfLogger) *Runtime {
+func NewRuntime(cfg *config.Config, log *slog.Logger, perf *PerfLogger) *Runtime {
 	return &Runtime{cfg: cfg, log: log, perf: perf}
 }
 
@@ -25,65 +27,64 @@ func (r *Runtime) Run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	store, err := NewMediaStore(r.cfg.AssistantTTSDir)
+	store, err := NewMediaStore(r.cfg.Assistant.TTS.Dir)
 	if err != nil {
 		return err
 	}
-	recStore, err := NewMediaStore(r.cfg.AssistantAudioRecDir)
+	recStore, err := NewMediaStore(r.cfg.Assistant.Audio.Rec.Dir)
 	if err != nil {
 		return err
 	}
-	sttStore, err := NewMediaStore(r.cfg.AssistantSTTDir)
+	sttStore, err := NewMediaStore(r.cfg.Assistant.STT.Dir)
 	if err != nil {
 		return err
 	}
 	opusSaver := NewAsyncOpusSaver(2, 16)
 	defer opusSaver.Close()
-	capture, err := StartCapture(ctx, r.cfg.AssistantSampleRate)
+	capture, err := StartCapture(ctx, r.cfg.Assistant.Audio.Sample.Rate)
 	if err != nil {
 		return err
 	}
 	defer func() {
 		_ = capture.Close()
 	}()
-	playback, err := StartPlayback(r.cfg.AssistantSampleRate)
+	playback, err := StartPlayback(r.cfg.Assistant.Audio.Sample.Rate)
 	if err != nil {
 		return err
 	}
 	defer func() {
 		_ = playback.Close()
 	}()
-	stt, err := DialInworldSTT(ctx, r.cfg.InworldAPIKey, r.cfg.InworldSTTModel)
+	stt, err := inworld.New(ctx, &r.cfg.Inworld)
 	if err != nil {
 		return err
 	}
 	defer func() {
 		_ = stt.Close()
 	}()
-	tts, err := NewCartesiaTTS(r.cfg.CartesiaAPIKey, r.cfg.CartesiaModelID, r.cfg.CartesiaVoiceID, "ru")
+	tts, err := cartesia.New(ctx, &r.cfg.Cartesia)
 	if err != nil {
 		return err
 	}
+	defer func() {
+		_ = tts.Close()
+	}()
 
 	micChunks := make(chan []byte, 64)
-	finals := make(chan STTEvent, 16)
+	finals := make(chan inworld.Event, 16)
 	errCh := make(chan error, 4)
 	var wg sync.WaitGroup
 	var ttsMu sync.Mutex
 	var micRaw bytes.Buffer
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		if err := capture.StreamChunks(ctx, r.cfg.AssistantChunkMS, r.cfg.AssistantSampleRate, micChunks); err != nil && ctx.Err() == nil {
+	wg.Go(func() {
+		if err := capture.StreamChunks(ctx, r.cfg.Assistant.Chunk.MS, r.cfg.Assistant.Audio.Sample.Rate, micChunks); err != nil && ctx.Err() == nil {
 			errCh <- err
 		}
 		close(micChunks)
-	}()
+	})
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		const (
 			voiceThreshold = 0.012 // tune for conversational mic noise floor
 			pauseToCutMS   = 700
@@ -99,7 +100,7 @@ func (r *Runtime) Run(ctx context.Context) error {
 			}
 			// Pause-aware turn detection: cut utterance on conversational silence.
 			level := rmsLevelPCM16(chunk)
-			chunkMS := r.cfg.AssistantChunkMS
+			chunkMS := r.cfg.Assistant.Chunk.MS
 			if chunkMS <= 0 {
 				chunkMS = 100
 			}
@@ -122,11 +123,9 @@ func (r *Runtime) Run(ctx context.Context) error {
 				silenceMS = 0
 			}
 		}
-	}()
+	})
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		defer close(finals)
 		for {
 			ev, err := stt.ReadEvent(ctx)
@@ -153,11 +152,9 @@ func (r *Runtime) Run(ctx context.Context) error {
 			_ = r.perf.Event("stt_partial_received", map[string]any{"text_len": len(ev.Text)})
 			r.log.Info("assistant partial transcript", slog.String("text", ev.Text))
 		}
-	}()
+	})
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		for ev := range finals {
 			sttPath := sttStore.NewFilePath("txt")
 			if err := sttStore.WriteAll(sttPath, []byte(ev.Text+"\n")); err != nil {
@@ -255,7 +252,7 @@ func (r *Runtime) Run(ctx context.Context) error {
 				slog.Int("audio_bytes", ttsRaw.Len()),
 			)
 			path := store.NewFilePath("opus")
-			ok := opusSaver.Enqueue(ttsRaw.Bytes(), r.cfg.AssistantSampleRate, path)
+			ok := opusSaver.Enqueue(ttsRaw.Bytes(), r.cfg.Assistant.Audio.Sample.Rate, path)
 			if !ok {
 				_ = r.perf.Event("tts_opus_enqueue_dropped", map[string]any{"bytes": ttsRaw.Len()})
 			} else {
@@ -263,7 +260,7 @@ func (r *Runtime) Run(ctx context.Context) error {
 			}
 			ttsMu.Unlock()
 		}
-	}()
+	})
 
 	select {
 	case <-ctx.Done():
@@ -278,7 +275,7 @@ func (r *Runtime) Run(ctx context.Context) error {
 	cancel()
 	wg.Wait()
 	micPath := recStore.NewFilePath("opus")
-	ok := opusSaver.Enqueue(micRaw.Bytes(), r.cfg.AssistantSampleRate, micPath)
+	ok := opusSaver.Enqueue(micRaw.Bytes(), r.cfg.Assistant.Audio.Sample.Rate, micPath)
 	if !ok {
 		return fmt.Errorf("assistant runtime: mic opus enqueue dropped")
 	}

@@ -12,12 +12,11 @@ import (
 	"time"
 
 	"git.produktor.io/edelweiss/docs/services/internal/config"
-	"git.produktor.io/edelweiss/docs/services/internal/embed"
 	"git.produktor.io/edelweiss/docs/services/internal/graph"
-	"git.produktor.io/edelweiss/docs/services/internal/llm"
 	"git.produktor.io/edelweiss/docs/services/internal/rag"
 	"git.produktor.io/edelweiss/docs/services/internal/slogx"
-	"git.produktor.io/edelweiss/docs/services/internal/vectorstore"
+	"git.produktor.io/edelweiss/docs/services/pkg/ollama"
+	"git.produktor.io/edelweiss/docs/services/pkg/qdrant"
 	matrix "github.com/eslider/go-matrix-bot"
 	"maunium.net/go/mautrix/event"
 	"maunium.net/go/mautrix/id"
@@ -31,8 +30,8 @@ func run() int {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	cfg, err := config.Load()
-	if err != nil {
+	cfg := config.NewConfig()
+	if err := cfg.Load(); err != nil {
 		slog.Error("config", slog.Any("err", err))
 		return 1
 	}
@@ -40,9 +39,9 @@ func run() int {
 		slog.Error("bot config", slog.Any("err", err))
 		return 1
 	}
-	log := slogx.New(cfg.MatrixDebug)
+	log := slogx.New(cfg.Matrix.Debug)
 
-	gstore, err := graph.NewStore(ctx, cfg.Neo4jURI, cfg.Neo4jUser, cfg.Neo4jPassword)
+	gstore, err := graph.NewStore(ctx, cfg.Neo4j.URI, cfg.Neo4j.User, cfg.Neo4j.Password)
 	if err != nil {
 		log.Error("neo4j", slog.Any("err", err))
 		return 1
@@ -51,24 +50,37 @@ func run() int {
 		_ = gstore.Close(ctx)
 	}()
 
-	emb := embed.New(cfg.OllamaURL, cfg.HTTPTimeout)
-	llmClient := llm.New(cfg.OllamaURL, cfg.HTTPTimeout)
-	qdr := vectorstore.New(cfg.QdrantURL, cfg.HTTPTimeout)
-	dim, err := waitForRAGBackend(ctx, log, emb, qdr, cfg.EmbedModel, cfg.QdrantCollection)
+	llmCli, err := ollama.New(ctx, &ollama.Config{URL: cfg.Ollama.URL, Timeout: cfg.HTTP.Timeout})
+	if err != nil {
+		log.Error("ollama", slog.Any("err", err))
+		return 1
+	}
+	defer func() {
+		_ = llmCli.Close()
+	}()
+	qdr, err := qdrant.New(ctx, &cfg.Qdrant, cfg.HTTP.Timeout)
+	if err != nil {
+		log.Error("qdrant client", slog.Any("err", err))
+		return 1
+	}
+	defer func() {
+		_ = qdr.Close()
+	}()
+	dim, err := waitForRAGBackend(ctx, log, llmCli, qdr, cfg.Embedding.Model, cfg.Qdrant.Collection)
 	if err != nil {
 		log.Error("rag backend", slog.Any("err", err))
 		return 1
 	}
-	log.Info("rag backend ready", slog.String("collection", cfg.QdrantCollection), slog.Int("embed_dim", dim))
+	log.Info("rag backend ready", slog.String("collection", cfg.Qdrant.Collection), slog.Int("embed_dim", dim))
 
-	engine := rag.BuildEngineFromConfig(emb, llmClient, qdr, gstore, cfg.EmbedModel, cfg.GenModel, cfg.QdrantCollection)
+	engine := rag.BuildEngineFromConfig(llmCli, qdr, gstore, cfg.Embedding.Model, cfg.Generator.Model, cfg.Qdrant.Collection)
 
 	bcfg := matrix.Config{
-		Homeserver: cfg.MatrixHomeserver,
-		Username:   cfg.MatrixUser,
-		Password:   cfg.MatrixPassword,
-		Database:   cfg.BotDBPath,
-		Debug:      cfg.MatrixDebug,
+		Homeserver: cfg.Matrix.Homeserver(),
+		Username:   cfg.Matrix.ResolvedUser(),
+		Password:   cfg.Matrix.ResolvedPassword(),
+		Database:   cfg.Matrix.Bot.DB,
+		Debug:      cfg.Matrix.Debug,
 	}
 	bot, err := matrix.NewBot(bcfg)
 	if err != nil {
@@ -76,7 +88,7 @@ func run() int {
 		return 1
 	}
 
-	prefix := strings.TrimSpace(cfg.BotCommandPrefix)
+	prefix := strings.TrimSpace(cfg.Commands.Command.Prefix)
 	if prefix == "" {
 		prefix = "!edel"
 	}
@@ -148,8 +160,8 @@ func run() int {
 func waitForRAGBackend(
 	ctx context.Context,
 	log *slog.Logger,
-	emb *embed.Client,
-	qdr *vectorstore.Qdrant,
+	emb *ollama.Client,
+	qdr *qdrant.Client,
 	embedModel, collection string,
 ) (int, error) {
 	backoff := 2 * time.Second

@@ -8,36 +8,49 @@ import (
 
 	"git.produktor.io/edelweiss/docs/services/internal/docsparse"
 	"git.produktor.io/edelweiss/docs/services/internal/idkind"
-	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
+	neon "git.produktor.io/edelweiss/docs/services/pkg/neo4j"
+
+	driver "github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
-// Store wraps a Neo4j driver.
+// Store wraps a Neo4j driver sourced from pkg/neo4j.
 type Store struct {
-	Driver neo4j.DriverWithContext
+	neo *neon.Client
 }
 
-// NewStore opens a Neo4j driver (bolt URI).
+// NewStore opens a Neo4j driver via pkg/neo4j (bolt URI).
 func NewStore(ctx context.Context, uri, user, password string) (*Store, error) {
-	_ = ctx
-	d, err := neo4j.NewDriverWithContext(uri, neo4j.BasicAuth(user, password, ""))
+	c, err := neon.New(ctx, &neon.Config{URI: uri, User: user, Password: password})
 	if err != nil {
-		return nil, fmt.Errorf("graph: driver: %w", err)
+		return nil, fmt.Errorf("graph: %w", err)
 	}
-	return &Store{Driver: d}, nil
+	return &Store{neo: c}, nil
 }
 
-// Close closes the driver.
+// Close closes the Neo4j driver.
 func (s *Store) Close(ctx context.Context) error {
-	return s.Driver.Close(ctx)
+	_ = ctx
+	if s.neo == nil {
+		return nil
+	}
+	return s.neo.Close()
+}
+
+// Driver exposes the neo4j-go-driver handle for advanced calls.
+func (s *Store) Driver() driver.DriverWithContext {
+	if s.neo == nil {
+		return nil
+	}
+	return s.neo.Driver
 }
 
 // WriteCorpus merges nodes and edges.
 func (s *Store) WriteCorpus(ctx context.Context, pr *docsparse.ParseResult) error {
-	sess := s.Driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite})
+	sess := s.Driver().NewSession(ctx, driver.SessionConfig{AccessMode: driver.AccessModeWrite})
 	defer func() {
 		_ = sess.Close(ctx)
 	}()
-	_, err := sess.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
+	_, err := sess.ExecuteWrite(ctx, func(tx driver.ManagedTransaction) (any, error) {
 		for _, n := range pr.Nodes {
 			lbl, ok := labelFor(n.Kind)
 			if !ok {
@@ -114,11 +127,11 @@ func (s *Store) NeighborSummary(ctx context.Context, id string, limit int) (stri
 	if limit <= 0 {
 		limit = 20
 	}
-	sess := s.Driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead})
+	sess := s.Driver().NewSession(ctx, driver.SessionConfig{AccessMode: driver.AccessModeRead})
 	defer func() {
 		_ = sess.Close(ctx)
 	}()
-	res, err := sess.ExecuteRead(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
+	res, err := sess.ExecuteRead(ctx, func(tx driver.ManagedTransaction) (any, error) {
 		result, err := tx.Run(ctx, `
 MATCH (n {id: $id})-[r]-(m)
 RETURN type(r) AS rel, m.id AS mid, coalesce(m.title, m.summary, "") AS hint

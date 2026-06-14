@@ -20,17 +20,17 @@ func run() int {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	cfg, err := config.Load()
-	if err != nil {
+	cfg := config.NewConfig()
+	if err := cfg.Load(); err != nil {
 		slog.Error("config", slog.Any("err", err))
 		return 1
 	}
-	if err := cfg.Assistant(); err != nil {
+	if err := cfg.ValidateAssistant(); err != nil {
 		slog.Error("assistant config", slog.Any("err", err))
 		return 1
 	}
-	log := slogx.New(cfg.MatrixDebug)
-	perf, err := assistant.NewPerfLogger(cfg.AssistantPerfLog)
+	log := slogx.New(cfg.Matrix.Debug)
+	perf, err := assistant.NewPerfLogger(cfg.Assistant.Perf.Log)
 	if err != nil {
 		log.Error("perf logger", slog.Any("err", err))
 		return 1

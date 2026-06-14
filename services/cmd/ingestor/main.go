@@ -11,10 +11,10 @@ import (
 
 	"git.produktor.io/edelweiss/docs/services/internal/config"
 	"git.produktor.io/edelweiss/docs/services/internal/docsparse"
-	"git.produktor.io/edelweiss/docs/services/internal/embed"
 	"git.produktor.io/edelweiss/docs/services/internal/graph"
 	"git.produktor.io/edelweiss/docs/services/internal/slogx"
-	"git.produktor.io/edelweiss/docs/services/internal/vectorstore"
+	"git.produktor.io/edelweiss/docs/services/pkg/ollama"
+	"git.produktor.io/edelweiss/docs/services/pkg/qdrant"
 )
 
 func main() {
@@ -25,18 +25,18 @@ func run() int {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	cfg, err := config.Load()
-	if err != nil {
+	cfg := config.NewConfig()
+	if err := cfg.Load(); err != nil {
 		slog.Error("config", slog.Any("err", err))
 		return 1
 	}
-	log := slogx.New(cfg.MatrixDebug)
+	log := slogx.New(cfg.Matrix.Debug)
 	runStart := time.Now()
 
 	parseStart := time.Now()
-	pr, err := docsparse.WalkDocs(cfg.DocsRoot)
+	pr, err := docsparse.WalkDocs(cfg.Docs.Root)
 	if err != nil {
-		log.Error("walk docs", slog.Any("err", err), slog.String("root", cfg.DocsRoot))
+		log.Error("walk docs", slog.Any("err", err), slog.String("root", cfg.Docs.Root))
 		return 1
 	}
 	log.Info("ingest stage",
@@ -48,7 +48,7 @@ func run() int {
 		slog.Int64("latency_ms", time.Since(parseStart).Milliseconds()),
 	)
 
-	gstore, err := graph.NewStore(ctx, cfg.Neo4jURI, cfg.Neo4jUser, cfg.Neo4jPassword)
+	gstore, err := graph.NewStore(ctx, cfg.Neo4j.URI, cfg.Neo4j.User, cfg.Neo4j.Password)
 	if err != nil {
 		log.Error("neo4j", slog.Any("err", err))
 		return 1
@@ -69,15 +69,29 @@ func run() int {
 		slog.Int64("latency_ms", time.Since(graphStart).Milliseconds()),
 	)
 
-	emb := embed.New(cfg.OllamaURL, cfg.HTTPTimeout)
-	probe, err := emb.Embed(ctx, cfg.EmbedModel, "dimension probe")
+	llmCli, err := ollama.New(ctx, &ollama.Config{URL: cfg.Ollama.URL, Timeout: cfg.HTTP.Timeout})
+	if err != nil {
+		log.Error("ollama", slog.Any("err", err))
+		return 1
+	}
+	defer func() {
+		_ = llmCli.Close()
+	}()
+	q, err := qdrant.New(ctx, &cfg.Qdrant, cfg.HTTP.Timeout)
+	if err != nil {
+		log.Error("qdrant", slog.Any("err", err))
+		return 1
+	}
+	defer func() {
+		_ = q.Close()
+	}()
+	probe, err := llmCli.Embed(ctx, cfg.Embedding.Model, "dimension probe")
 	if err != nil {
 		log.Error("embed probe", slog.Any("err", err))
 		return 1
 	}
 	dim := uint64(len(probe))
-	q := vectorstore.New(cfg.QdrantURL, cfg.HTTPTimeout)
-	if err := q.EnsureCollection(ctx, cfg.QdrantCollection, dim); err != nil {
+	if err := q.EnsureCollection(ctx, cfg.Qdrant.Collection, dim); err != nil {
 		log.Error("qdrant collection", slog.Any("err", err))
 		return 1
 	}
@@ -90,10 +104,10 @@ func run() int {
 			end = len(pr.Chunks)
 		}
 		batchStart := time.Now()
-		var points []vectorstore.Point
+		var points []qdrant.Point
 		for _, ch := range pr.Chunks[i:end] {
 			h := docsparse.ChunkContentHash(ch)
-			vec, err := emb.Embed(ctx, cfg.EmbedModel, ch.Text)
+			vec, err := llmCli.Embed(ctx, cfg.Embedding.Model, ch.Text)
 			if err != nil {
 				log.Error("embed chunk", slog.String("path", ch.Path), slog.Any("err", err))
 				return 1
@@ -102,7 +116,7 @@ func run() int {
 				log.Error("embedding dim mismatch", slog.Int("got", len(vec)), slog.Uint64("want", dim))
 				return 1
 			}
-			points = append(points, vectorstore.PointFromChunk(h, vec, map[string]any{
+			points = append(points, qdrant.PointFromChunk(h, vec, map[string]any{
 				"node_id":      ch.NodeID,
 				"path":         ch.Path,
 				"heading":      ch.Heading,
@@ -110,7 +124,7 @@ func run() int {
 				"content_hash": h,
 			}))
 		}
-		if err := q.UpsertPoints(ctx, cfg.QdrantCollection, points); err != nil {
+		if err := q.UpsertPoints(ctx, cfg.Qdrant.Collection, points); err != nil {
 			log.Error("qdrant upsert", slog.Any("err", err))
 			return 1
 		}

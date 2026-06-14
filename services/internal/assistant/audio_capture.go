@@ -2,6 +2,7 @@ package assistant
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os/exec"
@@ -56,7 +57,7 @@ func (c *Capture) StreamChunks(ctx context.Context, chunkMS int, sampleRate int,
 		}
 		_, err := io.ReadFull(c.stdout, buf)
 		if err != nil {
-			if err == io.EOF || err == io.ErrUnexpectedEOF {
+			if err == io.EOF || errors.Is(err, io.ErrUnexpectedEOF) {
 				return nil
 			}
 			return fmt.Errorf("assistant capture: read: %w", err)

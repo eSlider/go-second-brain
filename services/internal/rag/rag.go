@@ -6,18 +6,16 @@ import (
 	"fmt"
 	"strings"
 
-	"git.produktor.io/edelweiss/docs/services/internal/embed"
 	"git.produktor.io/edelweiss/docs/services/internal/graph"
-	"git.produktor.io/edelweiss/docs/services/internal/llm"
-	"git.produktor.io/edelweiss/docs/services/internal/vectorstore"
+	"git.produktor.io/edelweiss/docs/services/pkg/ollama"
+	"git.produktor.io/edelweiss/docs/services/pkg/qdrant"
 )
 
 // Engine ties stores and models.
 type Engine struct {
-	Embed      *embed.Client       // Ollama embedder
-	LLM        *llm.Client         // Ollama LLM
-	Qdrant     *vectorstore.Qdrant // Qdrant vector store
-	Graph      *graph.Store        // Neo4j graph store
+	Ollama     *ollama.Client
+	Qdrant     *qdrant.Client
+	Graph      *graph.Store
 	EmbedModel string
 	GenModel   string
 	Collection string
@@ -29,7 +27,7 @@ func (e *Engine) Answer(ctx context.Context, userQuery string) (string, error) {
 	if e.TopK <= 0 {
 		e.TopK = 8
 	}
-	qv, err := e.Embed.Embed(ctx, e.EmbedModel, userQuery)
+	qv, err := e.Ollama.Embed(ctx, e.EmbedModel, userQuery)
 	if err != nil {
 		return "", fmt.Errorf("rag: embed query: %w", err)
 	}
@@ -74,25 +72,23 @@ func (e *Engine) Answer(ctx context.Context, userQuery string) (string, error) {
 		"Фрагменты из базы:",
 		contextBlock,
 	}, "\n")
-	raw, err := e.LLM.GenerateWithSystem(ctx, e.GenModel, system, prompt)
+	raw, err := e.Ollama.GenerateWithSystem(ctx, e.GenModel, system, prompt)
 	if err != nil {
 		return "", err
 	}
 	return sanitizeBotAnswer(raw), nil
 }
 
-// BuildEngineFromConfig is a small helper for cmd wiring.
+// BuildEngine wires shared Ollama + Qdrant + graph accessors for cmds.
 func BuildEngineFromConfig(
-	embedClient *embed.Client,
-	llmClient *llm.Client,
-	q *vectorstore.Qdrant,
+	ollamaClient *ollama.Client,
+	qdr *qdrant.Client,
 	g *graph.Store,
 	embedModel, genModel, collection string,
 ) *Engine {
 	return &Engine{
-		Embed:      embedClient,
-		LLM:        llmClient,
-		Qdrant:     q,
+		Ollama:     ollamaClient,
+		Qdrant:     qdr,
 		Graph:      g,
 		EmbedModel: embedModel,
 		GenModel:   genModel,

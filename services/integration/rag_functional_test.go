@@ -11,14 +11,13 @@ import (
 
 	"git.produktor.io/edelweiss/docs/services/internal/config"
 	"git.produktor.io/edelweiss/docs/services/internal/docsparse"
-	"git.produktor.io/edelweiss/docs/services/internal/embed"
 	"git.produktor.io/edelweiss/docs/services/internal/graph"
-	"git.produktor.io/edelweiss/docs/services/internal/llm"
 	"git.produktor.io/edelweiss/docs/services/internal/rag"
-	"git.produktor.io/edelweiss/docs/services/internal/vectorstore"
+	"git.produktor.io/edelweiss/docs/services/pkg/ollama"
+	qdrantpkg "git.produktor.io/edelweiss/docs/services/pkg/qdrant"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go/modules/neo4j"
-	"github.com/testcontainers/testcontainers-go/modules/qdrant"
+	tcqdrant "github.com/testcontainers/testcontainers-go/modules/qdrant"
 )
 
 const defaultGenModelRAGTest = "cajina/gemma4_e2b-q4_k_s:v01"
@@ -42,7 +41,7 @@ func TestRAGFunctional(t *testing.T) {
 	bolt, err := ncont.BoltUrl(ctx)
 	require.NoError(t, err)
 
-	qc, err := qdrant.Run(ctx, "qdrant/qdrant:latest")
+	qc, err := tcqdrant.Run(ctx, "qdrant/qdrant:latest")
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = qc.Terminate(ctx) })
 	qURL, err := qc.RESTEndpoint(ctx)
@@ -56,40 +55,43 @@ func TestRAGFunctional(t *testing.T) {
 	t.Setenv("OLLAMA_URL", ollamaURL())
 	t.Setenv("DOCS_ROOT", docsProjectDir(t))
 
-	cfg, err := config.Load()
-	require.NoError(t, err)
+	cfg := config.NewConfig()
+	require.NoError(t, cfg.Load())
 
-	gstore, err := graph.NewStore(ctx, cfg.Neo4jURI, cfg.Neo4jUser, cfg.Neo4jPassword)
+	gstore, err := graph.NewStore(ctx, cfg.Neo4j.URI, cfg.Neo4j.User, cfg.Neo4j.Password)
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = gstore.Close(ctx) })
 
-	pr, err := docsparse.WalkDocs(cfg.DocsRoot)
+	pr, err := docsparse.WalkDocs(cfg.Docs.Root)
 	require.NoError(t, err)
 	require.NoError(t, gstore.WriteCorpus(ctx, pr))
 
-	emb := embed.New(cfg.OllamaURL, cfg.HTTPTimeout)
-	probe, err := emb.Embed(ctx, cfg.EmbedModel, "probe")
+	llmCli, err := ollama.New(ctx, &ollama.Config{URL: cfg.Ollama.URL, Timeout: cfg.HTTP.Timeout})
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = llmCli.Close() })
+	q, err := qdrantpkg.New(ctx, &cfg.Qdrant, cfg.HTTP.Timeout)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = q.Close() })
+	probe, err := llmCli.Embed(ctx, cfg.Embedding.Model, "probe")
 	if err != nil {
 		t.Skipf("ollama embed: %v", err)
 	}
 	dim := uint64(len(probe))
-	q := vectorstore.New(cfg.QdrantURL, cfg.HTTPTimeout)
-	require.NoError(t, q.EnsureCollection(ctx, cfg.QdrantCollection, dim))
+	require.NoError(t, q.EnsureCollection(ctx, cfg.Qdrant.Collection, dim))
 
 	for _, ch := range pr.Chunks {
-		vec, err := emb.Embed(ctx, cfg.EmbedModel, ch.Text)
+		vec, err := llmCli.Embed(ctx, cfg.Embedding.Model, ch.Text)
 		require.NoError(t, err)
 		h := docsparse.ChunkContentHash(ch)
-		pt := vectorstore.PointFromChunk(h, vec, map[string]any{
+		pt := qdrantpkg.PointFromChunk(h, vec, map[string]any{
 			"node_id": ch.NodeID,
 			"path":    ch.Path,
 			"text":    ch.Text,
 		})
-		require.NoError(t, q.UpsertPoints(ctx, cfg.QdrantCollection, []vectorstore.Point{pt}))
+		require.NoError(t, q.UpsertPoints(ctx, cfg.Qdrant.Collection, []qdrantpkg.Point{pt}))
 	}
 
-	llmClient := llm.New(cfg.OllamaURL, cfg.HTTPTimeout)
-	engine := rag.BuildEngineFromConfig(emb, llmClient, q, gstore, cfg.EmbedModel, cfg.GenModel, cfg.QdrantCollection)
+	engine := rag.BuildEngineFromConfig(llmCli, q, gstore, cfg.Embedding.Model, cfg.Generator.Model, cfg.Qdrant.Collection)
 
 	t.Run("single_query_uc07", func(t *testing.T) {
 		cctx, cancel := context.WithTimeout(ctx, 15*time.Minute)

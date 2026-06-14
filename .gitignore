@@ -21,3 +21,5 @@ services/var/tss/
 services/var/stt/
 services/var/logs/
 services/var/run/
+
+.idea
