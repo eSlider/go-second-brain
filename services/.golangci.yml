@@ -16,6 +16,18 @@ linters:
     - nilerr
     - nolintlint
     - testifylint
+  settings:
+    revive:
+      rules:
+        - name: blank-imports
+        - name: context-as-argument
+        - name: error-return
+        - name: exported
+          disabled: true
+        - name: package-comments
+          disabled: true
+        - name: redefines-builtin-id
+          disabled: true
   exclusions:
     rules:
       # ponytail: assistant spawns pw-cat/ffmpeg; config reads trusted CONFIG_PATH
@@ -27,16 +39,3 @@ linters:
         linters: [revive]
       - path: cmd/
         linters: [revive]
-
-linters-settings:
-  revive:
-    rules:
-      - name: blank-imports
-      - name: context-as-argument
-      - name: error-return
-      - name: exported
-        disabled: true
-      - name: package-comments
-        disabled: true
-      - name: redefines-builtin-id
-        disabled: true
