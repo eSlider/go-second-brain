@@ -9,12 +9,12 @@ import (
 	"syscall"
 	"time"
 
-	"git.produktor.io/edelweiss/docs/services/internal/config"
-	"git.produktor.io/edelweiss/docs/services/internal/docsparse"
-	"git.produktor.io/edelweiss/docs/services/internal/graph"
-	"git.produktor.io/edelweiss/docs/services/internal/slogx"
-	"git.produktor.io/edelweiss/docs/services/pkg/ollama"
-	"git.produktor.io/edelweiss/docs/services/pkg/qdrant"
+	"github.com/eSlider/go-second-brain/services/internal/config"
+	"github.com/eSlider/go-second-brain/services/internal/docsparse"
+	"github.com/eSlider/go-second-brain/services/internal/graph"
+	"github.com/eSlider/go-second-brain/services/internal/slogx"
+	"github.com/eSlider/go-second-brain/services/pkg/ollama"
+	"github.com/eSlider/go-second-brain/services/pkg/qdrant"
 )
 
 func main() {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"git.produktor.io/edelweiss/docs/services/pkg/ollama"
+	"github.com/eSlider/go-second-brain/services/pkg/ollama"
 )
 
 // Client performs non-stream completion using a pinned model on [*ollama.Client].

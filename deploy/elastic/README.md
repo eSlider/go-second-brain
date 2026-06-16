@@ -10,7 +10,7 @@
 
 ## Имя проекта Compose
 
-В [`compose.yml`](../../compose.yml) задано `name: edelweiss`. Если раньше контейнеры создавались под **другим** именем проекта, после обновления compose их лучше пересоздать (`docker compose down` / `up`), чтобы метки логов были единообразными.
+В [`compose.yml`](../../compose.yml) задано `name: knowledge`. Если раньше контейнеры создавались под **другим** именем проекта, после обновления compose их лучше пересоздать (`docker compose down` / `up`), чтобы метки логов были единообразными.
 
 ## Ограничения
 
@@ -36,11 +36,11 @@ docker compose --profile elastic up -d elasticsearch kibana filebeat
 
 В Kibana (Discover / Lens):
 
-- фильтр по имени контейнера: поле `container.name` (например `edelweiss-qdrant-1`, `edelweiss-matrix-bot-1`);
+- фильтр по имени контейнера: поле `container.name` (например `knowledge-qdrant-1`, `knowledge-matrix-bot-1`);
 - по сервису Compose: `container.labels.com_docker_compose_service` = `qdrant` | `neo4j` | `matrix-bot` | …;
 - текст ошибок: поле `message` или `log` (зависит от парсера), полнотекстовый поиск по `error`, `ERR`, `panic` и т.д.
 
-Имя проекта Compose зафиксировано в [`compose.yml`](../../compose.yml) как `name: edelweiss`, чтобы метки `com.docker.compose.project` были стабильными.
+Имя проекта Compose зафиксировано в [`compose.yml`](../../compose.yml) как `name: knowledge`, чтобы метки `com.docker.compose.project` были стабильными.
 
 ## Производительность и «профилирование» workflow
 
@@ -52,9 +52,9 @@ docker compose --profile elastic up -d elasticsearch kibana filebeat
 
 Для глубокого профилирования Go-сервисов дополнительно используйте `pprof` / трассировку в приложении (отдельно от этого стека).
 
-## Дашборды Edelweiss (бот, RAG, Ollama, Qdrant)
+## Дашборды DemoCare (бот, RAG, Ollama, Qdrant)
 
-Бот (`matrix-bot`) и ингестор (`kg-ingestor`) пишут **JSON** в stderr (slog). В [`filebeat.yml`](filebeat.yml) включён **`decode_json_fields`** для строк, начинающихся с `{"time":` — в Elasticsearch появляются поля `edelweiss.msg`, `edelweiss.level`, `edelweiss.event`, `edelweiss.latency_ms` и т.д. (удобно для KQL в TSVB).
+Бот (`matrix-bot`) и ингестор (`kg-ingestor`) пишут **JSON** в stderr (slog). В [`filebeat.yml`](filebeat.yml) включён **`decode_json_fields`** для строк, начинающихся с `{"time":` — в Elasticsearch появляются поля `knowledge.msg`, `knowledge.level`, `knowledge.event`, `knowledge.latency_ms` и т.д. (удобно для KQL в TSVB).
 
 События, на которых завязаны графики:
 
@@ -82,14 +82,14 @@ make elastic-setup       # data view + визуализации + дашборд
 
 | ID | Назначение |
 | --- | --- |
-| `edelweiss-overview` | Общий: логи по контейнерам, ошибки по сервисам, **бот** (QPM, latency p50/p95, ошибки, топ отправителей), ингестор |
-| `edelweiss-rag` | **RAG**: только панели по `bot_query` (объём, задержки, сбои, пользователи) |
-| `edelweiss-ollama` | **Ollama / embed**: сбои embed probe и суммарная активность embed/Ollama в логах |
-| `edelweiss-qdrant` | **Qdrant**: логи контейнера + события приложения (upsert-батчи, сообщения бота про Qdrant) |
+| `knowledge-overview` | Общий: логи по контейнерам, ошибки по сервисам, **бот** (QPM, latency p50/p95, ошибки, топ отправителей), ингестор |
+| `knowledge-rag` | **RAG**: только панели по `bot_query` (объём, задержки, сбои, пользователи) |
+| `knowledge-ollama` | **Ollama / embed**: сбои embed probe и суммарная активность embed/Ollama в логах |
+| `knowledge-qdrant` | **Qdrant**: логи контейнера + события приложения (upsert-батчи, сообщения бота про Qdrant) |
 
-Прямые ссылки (порт по умолчанию): [overview](http://127.0.0.1:5601/app/dashboards#/view/edelweiss-overview), [rag](http://127.0.0.1:5601/app/dashboards#/view/edelweiss-rag), [ollama](http://127.0.0.1:5601/app/dashboards#/view/edelweiss-ollama), [qdrant](http://127.0.0.1:5601/app/dashboards#/view/edelweiss-qdrant).
+Прямые ссылки (порт по умолчанию): [overview](http://127.0.0.1:5601/app/dashboards#/view/knowledge-overview), [rag](http://127.0.0.1:5601/app/dashboards#/view/knowledge-rag), [ollama](http://127.0.0.1:5601/app/dashboards#/view/knowledge-ollama), [qdrant](http://127.0.0.1:5601/app/dashboards#/view/knowledge-qdrant).
 
-Правки визуализаций и дашбордов — в [`setup-kibana.sh`](setup-kibana.sh), затем снова `make elastic-setup`. После смены полей в Filebeat в Kibana может понадобиться **Stack Management → Data views → Edelweiss · filebeat → Refresh field list**.
+Правки визуализаций и дашбордов — в [`setup-kibana.sh`](setup-kibana.sh), затем снова `make elastic-setup`. После смены полей в Filebeat в Kibana может понадобиться **Stack Management → Data views → DemoCare · filebeat → Refresh field list**.
 
 ## Опционально: стандартные дашборды Filebeat
 

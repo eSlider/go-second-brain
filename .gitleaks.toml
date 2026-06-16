@@ -1,0 +1,10 @@
+title = "go-second-brain gitleaks config"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "generic-env-file"
+description = "Committed .env files"
+regex = '''(?i)(password|passwd|secret|api[_-]?key|auth[_-]?token)\s*=\s*['"]?[a-zA-Z0-9$!@#%^&*()_+\-=\[\]{}|;:'",.<>?/\\~`]{8,}'''
+path = '''\.env$'''

@@ -1,40 +1,21 @@
 ---
-description: Общий контекст проекта Edelweiss (Pflegedienst / CuraSoft) — читать первым при работе с репозиторием
+description: Monorepo context for go-second-brain SDK + demo knowledge base
 alwaysApply: true
 ---
 
-# Edelweiss Project Context
+# go-second-brain project context
 
-Этот репозиторий — **база знаний** о немецком Pflegedienst (службе ухода на дому) Edelweiss. Он не содержит прикладного кода — только документацию, которая станет основой для AI-агентов и интеграций.
+Монорепозиторий: **Go SDK** (`services/`) + **demo база знаний** (`docs/project/`).
 
-## Что прочитать первым
+## Читать первым
 
-1. `README.md` — структура проекта.
-2. `AGENTS.md` — конвенции для AI-агентов.
-3. `docs/project/overview.md` — чем занимается компания.
-4. `docs/project/glossary.md` — термины и справочник ID (`SUBJ-*`, `UC-*`, `PAIN-*`, `AUTO-*`, `AGENT-*`, `ROAD-*`).
+1. [README.md](../../README.md)
+2. [docs/system/README.md](../../docs/system/README.md)
+3. [docs/project/overview.md](../../docs/project/overview.md) — опционально, demo corpus DemoCare
 
-## Правила работы
+## Правила
 
-- Язык — **русский**. Немецкие термины — в оригинальном написании.
-- Сырые транскрипты в `docs/*.stt.txt` **не редактировать**. Работа идёт в `docs/reports/*.md`.
-- Новые материалы обобщаем в `docs/project/`:
-  - новые субъекты → `docs/project/subjects/`;
-  - новые кейсы → `docs/project/cases/` (нумерация `UC-XX`);
-  - новые процессы → `docs/project/processes/`;
-  - новые боли / автоматизации → `docs/project/optimization/`.
-- Не изобретать фактов. Всё, что не подтверждено интервью — помечаем `TODO: уточнить у CTO`.
-
-## Минимальные изменения
-
-- Делаем точечные правки.
-- Один логический шаг — один commit.
-
-## Идентификаторы
-
-- Субъекты: `SUBJ-*`.
-- Кейсы: `UC-NN` (01..99).
-- Боли: `PAIN-NN`.
-- Автоматизации: `AUTO-NN`.
-- Агенты: `AGENT-NN`.
-- Roadmap: `ROAD-NN`.
+- Язык доменных документов — русский; SDK/ADR — английский в `docs/system/`
+- Не изобретать факты о demo-домене
+- Минимальные точечные правки; один логический commit — одна единица
+- Код: Ponytail (`.cursor/rules/ponytail.mdc`)

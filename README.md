@@ -1,114 +1,99 @@
----
-title: Home
----
+# go-second-brain
 
-# Edelweiss Pflegedienst 
+[![Go Reference](https://pkg.go.dev/badge/github.com/eSlider/go-second-brain/services.svg)](https://pkg.go.dev/github.com/eSlider/go-second-brain/services)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Go](https://img.shields.io/badge/Go-1.26+-00ADD8.svg)](https://go.dev)
 
-> Проект анализа и автоматизации Pflegedienst
+Self-hosted **second brain**: Markdown knowledge base → **Neo4j** graph + **Qdrant** vectors → **Matrix** RAG bot and optional **voice assistant** (STT/TTS).
 
-Репозиторий для анализа деятельности немецкого **Pflegedienst** (службы ухода на дому) Edelweiss. Цель — выявить, **что делает компания**, **как** именно, **какие кейсы** существуют, и **что можно оптимизировать/автоматизировать** с помощью ИИ-агентов и интеграций.
+Includes a synthetic **DemoCare** Pflegedienst corpus in `docs/project/` for ingest and RAG demos without real PII.
 
-## Источники
+## Architecture
 
-- Сырой материал — аудио-транскрипты интервью в [docs](./docs).
-  - Собеседник: **Artem M.** (CTO, Edelweiss)
-  - Интервьюер: **Andrey** (задаёт вопросы, уточняет процессы)
-- Обработанный, читаемый формат — в [docs/reports](./docs/reports).
-
-## Структура репозитория
-
-```
-edelweiss/
-├── README.md                        # Этот файл
-├── AGENTS.md                        # Инструкции для AI-агентов / skills
-├── docs/
-│   ├── *.stt.txt                    # Сырые транскрипты интервью
-│   ├── reports/                     # Структурированные версии интервью
-│   │   ├── 00-summary.md            # Сквозная сводка всех интервью
-│   │   ├── 01-interview-2026-04-17_16-22.md
-│   │   └── 02-interview-2026-04-17_16-37.md
-│   └── project/                     # Аналитика и проектные артефакты
-│       ├── overview.md              # Что делает компания (high-level)
-│       ├── company-info.md          # Юр. реквизиты, адрес, IK-Nummer и т.д.
-│       ├── glossary.md              # Термины (немецкие + отраслевые)
-│       ├── subjects/                # Субъекты (actors) — кто участвует
-│       ├── cases/                   # Use cases (кейсы) — что происходит
-│       ├── processes/               # End-to-end процессы
-│       ├── systems/                 # IT-системы и их роли
-│       └── optimization/            # Боли, автоматизация, идеи AI-агентов
-└── .cursor/
-    └── rules/                       # Правила для Cursor IDE
+```mermaid
+flowchart TB
+  subgraph ingest [Ingestion]
+    MD["docs/project/*.md"]
+    Parser["internal/docsparse"]
+    MD --> Parser
+    Parser --> Neo4j["Neo4j"]
+    Parser --> Qdrant["Qdrant"]
+    Parser --> OllamaE["Ollama embeddings"]
+  end
+  subgraph serve [Serving]
+    Matrix["Matrix bot"]
+    RAG["internal/rag"]
+    OllamaG["Ollama generate"]
+    Matrix --> RAG
+    RAG --> Qdrant
+    RAG --> OllamaG
+  end
+  subgraph voice [Optional]
+    Assistant["cmd/assistant"]
+    Assistant --> Inworld["Inworld STT"]
+    Assistant --> Cartesia["Cartesia TTS"]
+  end
 ```
 
-## Как читать проект
+## Install
 
-1. **Быстрый контекст**
-   → [кратко, чем живёт компания](./docs/project/overview.md)
-   → [юридические реквизиты Edelweiss](./docs/project/company-info.md)
-   → [глоссарий терминов и справочник ID (`SUBJ-*`, `UC-*`, `PAIN-*`, `AUTO-*`, `AGENT-*`, `ROAD-*`)](./docs/project/glossary.md)
-2. **Детали интервью**
-   → [сквозная сводка интервью](./docs/reports/00-summary.md).
-3. **Структурный анализ**
-   → [субъекты: кто участвует (пациент, врач, касса, сотрудник, система)](./docs/project/subjects).
-   → [кейсы и сценарии](./docs/project/cases).
-   → [процессы: сквозные цепочки](./docs/project/processes).
-4. **Точки роста**
-   → [боли и идеи улучшения](./docs/project/optimization).
+```sh
+go get github.com/eSlider/go-second-brain/services
+```
 
-## Жанр проекта
+## Quick start
 
-Это **исследовательская база знаний**, а не код. Цели:
+```bash
+git clone https://github.com/eSlider/go-second-brain.git
+cd go-second-brain
+cp config.yaml.example config.yaml   # optional local overrides
+cp .env.example .env                 # set secrets
+make kg-up
+make ingest
+make bot
+```
 
-- зафиксировать предметную область (domain knowledge) в виде документов;
-- выделить чёткие **субъекты**, **кейсы**, **процессы**;
-- сделать материал удобным и для человека, и для **AI-агентов** (чтение, reasoning, генерация решений).
+- **Ollama** runs on the host (`OLLAMA_URL`, default `http://127.0.0.1:11434`)
+- **Neo4j Browser:** http://localhost:7474
+- **Bot prefix:** `!brain` (see `BOT_COMMAND_PREFIX`)
 
-## Работа с AI-агентами
+System docs for agents: [docs/system/README.md](./docs/system/README.md)
 
-См. [инструкции для skills/агентов](./AGENTS.md): что читать в первую очередь, как обновлять документы, какие конвенции использовать.
+## Go module layout
 
-## Knowledge graph и Matrix-бот (опционально)
+| Path | Description |
+|------|-------------|
+| `services/pkg/*` | Public SDK clients (Ollama, Qdrant, Neo4j, Matrix, voice APIs) |
+| `services/cmd/*` | Reference binaries: ingestor, bot, assistant |
+| `services/internal/*` | App wiring (RAG, docsparse, config) |
 
-Поверх `docs/project/` можно поднять стек **Neo4j + Qdrant + бот в Matrix** (код в [`services/`](./services/), образы в [`compose.yml`](./compose.yml)). **Ollama** ожидается на хосте (`OLLAMA_URL`, по умолчанию `http://127.0.0.1:11434`), в контейнерах доступ через `host.docker.internal`.
+## Configuration
 
-- Шаблон переменных: [.env.example](./.env.example) (скопируйте в `.env`).
-- Эмбеддинги по умолчанию: **`embeddinggemma`** (`EMBED_MODEL`); генерация ответов: **`cajina/gemma4_e2b-q4_k_s:v01`** (`GEN_MODEL`, `ollama pull …`). После смены модели эмбеддингов — полный ingest.
-- Поднять графовые сервисы: `./bin/run.sh` (Neo4j + Qdrant + бот), `./bin/stop.sh` — остановка; `INCLUDE_ELASTIC=1 ./bin/run.sh` — ещё Elasticsearch/Kibana/Filebeat. Альтернатива: `make kg-up` или `docker compose --profile kg up -d neo4j qdrant`.
-- Индексация документации: `make ingest` или `docker compose --profile kg run --rm kg-ingestor`.
-- Запуск бота: `make bot` или `docker compose --profile bot up -d matrix-bot` (после индексации). В комнате отвечает на сообщения с префиксом `!edel` (см. `BOT_COMMAND_PREFIX`) или с упоминанием `@<localpart>` бота.
-- Neo4j Browser: `http://localhost:7474` (логин `neo4j`, пароль из `NEO4J_PASSWORD`).
-- Логи контейнеров в **Elasticsearch + Kibana** (поиск ошибок, фильтры по сервису): `make elastic-up` или `docker compose --profile elastic up -d elasticsearch kibana filebeat` → Kibana `http://127.0.0.1:5601`. Подробности: [deploy/elastic/README.md](./deploy/elastic/README.md).
+YAML defaults + env secrets via [go-config](https://github.com/eSlider/go-config):
 
-Интеграционные тесты (Docker + при необходимости Ollama на localhost): `make test-integration`.
+- `config.yaml.example` — committed defaults
+- `.env` — passwords and API keys (gitignored)
 
-Техническая схема, окружение и соглашения по коду — в [CONTRIBUTING.md](./CONTRIBUTING.md).
+Details: [docs/system/configuration.md](./docs/system/configuration.md)
 
-## Voice assistant MVP (CLI, low latency)
+## Voice assistant
 
-В `services/cmd/assistant` добавлен MVP-цикл **STT -> TTS** для русского языка:
+```bash
+cd services
+# set INWORLD_API_KEY, CARTESIA_API_KEY, CARTESIA_VOICE_ID in .env
+go run ./cmd/assistant
+```
 
-- **STT**: Inworld streaming WebSocket (`base`, voice profile enabled).
-- **TTS**: Cartesia Sonic 3.5 (streaming).
-- **I/O**: default PipeWire input/output устройства.
-- **Хранилище**: TTS audio в `var/tss/{id}-{time}.opus`, mic audio в `var/audio-rec/{id}-{time}.opus`, STT тексты в `var/stt/{id}-{time}.txt`.
-- **Метрики**: JSONL в `var/logs/performance.jsonl`.
+## Development
 
-Переменные окружения (в `.env`):
+```bash
+cd services && go test ./...
+make test-integration    # Docker testcontainers
+make lint
+```
 
-- `INWORLD_API_KEY`, `INWORLD_STT_MODEL` (default `base`)
-- `CARTESIA_API_KEY`, `CARTESIA_MODEL_ID` (default `sonic-3.5`), `CARTESIA_VOICE_ID`
-- `ASSISTANT_AUDIO_SAMPLE_RATE` (default `16000`)
-- `ASSISTANT_CHUNK_MS` (default `100`)
-- `ASSISTANT_TTS_DIR` (default `var/tss`)
-- `ASSISTANT_AUDIO_REC_DIR` (default `var/audio-rec`)
-- `ASSISTANT_STT_DIR` (default `var/stt`)
-- `ASSISTANT_PERF_LOG` (default `var/logs/performance.jsonl`)
+See [CONTRIBUTING.md](./CONTRIBUTING.md).
 
-Локальный запуск:
+## License
 
-- `cd services`
-- `go run ./cmd/assistant`
-
-## Статус
-
-Живой документ. При появлении новых интервью — кладём `.stt.txt` в `docs/`, после обработки — `*.md` в `docs/reports/`, а обобщения — в `docs/project/`.
+MIT — see [LICENSE](./LICENSE).

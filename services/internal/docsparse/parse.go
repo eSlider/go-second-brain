@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"git.produktor.io/edelweiss/docs/services/internal/idkind"
+	"github.com/eSlider/go-second-brain/services/internal/idkind"
 )
 
 var (

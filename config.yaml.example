@@ -1,0 +1,101 @@
+# Default configuration for go-second-brain (non-secret).
+# Copy to config.yaml for local overrides (config.yaml is gitignored).
+# Secrets: copy .env.example → .env
+
+docs:
+  root: docs/project
+
+neo4j:
+  user: neo4j
+  uri: bolt://127.0.0.1:7687
+
+qdrant:
+  url: http://127.0.0.1:6333
+  collection: knowledge
+
+ollama:
+  url: http://127.0.0.1:11434
+  timeout: 120s
+
+embed:
+  model: embeddinggemma
+
+gen:
+  model: cajina/gemma4_e2b-q4_k_s:v01
+
+http:
+  timeout: 120s
+
+matrix:
+  api:
+    url: https://example.org/
+    user: bot
+  debug: false
+  bot:
+    db: /data/matrix-bot.db
+
+bot:
+  command:
+    prefix: "!brain"
+
+inworld:
+  stt:
+    model: base
+
+cartesia:
+  model:
+    id: sonic-3.5
+  language: ru
+  sample_rate: 16000
+
+assistant:
+  audio:
+    sample:
+      rate: 16000
+    rec:
+      dir: var/audio-rec
+  chunk:
+    ms: 100
+  tts:
+    dir: var/tss
+  stt:
+    dir: var/stt
+  perf:
+    log: var/logs/performance.jsonl
+
+rag:
+  top_k: 8
+  system_prompt: |
+    You are a knowledge-base assistant for DemoCare ambulanter Pflegedienst (home care in Germany).
+    Answer rules:
+    - Language: Russian, 2–8 sentences, conversational tone, no bullet-point analysis.
+    - Keep German domain terms (Pflegegrad, Verordnung, Krankenkasse, Dienstplan, etc.) in original spelling.
+    - Do NOT mention: SUBJ-, UC-, PAIN-, AUTO-, AGENT-, ROAD-, DOC: codes, file paths, graph nodes, INVOLVES.
+    - No headings or filler: skip "Here is the analysis", "In context", etc.
+    - If the excerpts below do not answer the question — one short sentence: not in the knowledge base.
+    - Answer only what was asked; do not recap the whole excerpt.
+
+compose:
+  ingest:
+    docs_root: /repo/docs/project
+    neo4j_uri: bolt://neo4j:7687
+    qdrant_url: http://qdrant:6333
+    ollama_url: http://host.docker.internal:11434
+  bot:
+    network_mode: host
+    neo4j_uri: bolt://127.0.0.1:7687
+    qdrant_url: http://127.0.0.1:6333
+    ollama_url: http://127.0.0.1:11434
+
+ports:
+  docs: 5496
+  neo4j_http: 7474
+  neo4j_bolt: 7687
+  qdrant_http: 6333
+
+elastic:
+  elasticsearch_port: 9200
+  kibana_port: 5601
+  version: "8.15.3"
+  node_name: es01
+  cluster_name: second-brain-logs

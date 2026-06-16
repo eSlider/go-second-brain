@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"git.produktor.io/edelweiss/docs/services/internal/docsparse"
-	"git.produktor.io/edelweiss/docs/services/internal/graph"
-	"git.produktor.io/edelweiss/docs/services/pkg/ollama"
-	qdrantpkg "git.produktor.io/edelweiss/docs/services/pkg/qdrant"
+	"github.com/eSlider/go-second-brain/services/internal/docsparse"
+	"github.com/eSlider/go-second-brain/services/internal/graph"
+	"github.com/eSlider/go-second-brain/services/pkg/ollama"
+	qdrantpkg "github.com/eSlider/go-second-brain/services/pkg/qdrant"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go/modules/neo4j"
 	tcqdrant "github.com/testcontainers/testcontainers-go/modules/qdrant"
@@ -82,7 +82,7 @@ func TestQdrantEmbedAndSearch(t *testing.T) {
 	q, err := qdrantpkg.New(ctx, &qdrantpkg.Config{URL: httpURL}, 30*time.Second)
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = q.Close() })
-	name := "test_edelweiss_integration"
+	name := "test_knowledge_integration"
 	require.NoError(t, q.EnsureCollection(ctx, name, dim))
 
 	ch := docsparse.TextChunk{

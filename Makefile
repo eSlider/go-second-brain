@@ -15,7 +15,7 @@ bot:
 elastic-up:
 	docker compose --profile elastic up -d elasticsearch kibana filebeat
 
-# Provision Kibana data view + Edelweiss dashboard via Kibana API.
+# Provision Kibana data view + dashboard via Kibana API.
 # Override defaults: KIBANA_URL, KIBANA_AUTH=user:password.
 elastic-setup:
 	KIBANA_URL=$${KIBANA_URL:-http://127.0.0.1:5601} ./deploy/elastic/setup-kibana.sh

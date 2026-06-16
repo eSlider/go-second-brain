@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"git.produktor.io/edelweiss/docs/services/pkg/ollama"
+	"github.com/eSlider/go-second-brain/services/pkg/ollama"
 )
 
 // Client projects text into embeddings using a pinned model on a shared [*ollama.Client].

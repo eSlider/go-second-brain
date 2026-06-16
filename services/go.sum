@@ -39,6 +39,8 @@ github.com/docker/go-units v0.5.0 h1:69rxXcBk27SvSaaxTtLh/8llcHD8vYHT7WSdRZ/jvr4
 github.com/docker/go-units v0.5.0/go.mod h1:fgPhTUdO+D/Jk86RDLlptpiXQzgHJF7gydDDbaIK4Dk=
 github.com/ebitengine/purego v0.10.0 h1:QIw4xfpWT6GWTzaW5XEKy3HXoqrJGx1ijYHzTF0/ISU=
 github.com/ebitengine/purego v0.10.0/go.mod h1:iIjxzd6CiRiOG0UyXP+V1+jWqUXVjPKLAI0mRfJZTmQ=
+github.com/eslider/go-config v0.4.0 h1:CeyQ0QhJGYLWqri/pcuJXmLYnivF5501xGqZ1sZZ8/4=
+github.com/eslider/go-config v0.4.0/go.mod h1:8QWKcyvDdY43l0/Ra0uRfPSo9z4XtNUN/cwwJcdKOTM=
 github.com/eslider/go-matrix-bot v0.3.2-0.20260213130250-b8ee18f8490b h1:mX4VbM2EDADq+vThs5m9q7yAw/XFdwWlTSKT6JCgTTE=
 github.com/eslider/go-matrix-bot v0.3.2-0.20260213130250-b8ee18f8490b/go.mod h1:nYcWhoTS37s5WjG+/yFNcPng5YhR2xH2xh6whrdFplY=
 github.com/felixge/httpsnoop v1.0.4 h1:NFTV2Zj1bL4mc9sqWACXbQFVBBg2W3GPvqp8/ESS2Wg=

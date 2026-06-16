@@ -9,12 +9,12 @@ import (
 	"testing"
 	"time"
 
-	"git.produktor.io/edelweiss/docs/services/internal/config"
-	"git.produktor.io/edelweiss/docs/services/internal/docsparse"
-	"git.produktor.io/edelweiss/docs/services/internal/graph"
-	"git.produktor.io/edelweiss/docs/services/internal/rag"
-	"git.produktor.io/edelweiss/docs/services/pkg/ollama"
-	qdrantpkg "git.produktor.io/edelweiss/docs/services/pkg/qdrant"
+	"github.com/eSlider/go-second-brain/services/internal/config"
+	"github.com/eSlider/go-second-brain/services/internal/docsparse"
+	"github.com/eSlider/go-second-brain/services/internal/graph"
+	"github.com/eSlider/go-second-brain/services/internal/rag"
+	"github.com/eSlider/go-second-brain/services/pkg/ollama"
+	qdrantpkg "github.com/eSlider/go-second-brain/services/pkg/qdrant"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go/modules/neo4j"
 	tcqdrant "github.com/testcontainers/testcontainers-go/modules/qdrant"
@@ -51,7 +51,7 @@ func TestRAGFunctional(t *testing.T) {
 	t.Setenv("NEO4J_USER", "neo4j")
 	t.Setenv("NEO4J_PASSWORD", "rag-func-test")
 	t.Setenv("QDRANT_URL", qURL)
-	t.Setenv("QDRANT_COLLECTION", "edelweiss_func_test")
+	t.Setenv("QDRANT_COLLECTION", "knowledge_func_test")
 	t.Setenv("OLLAMA_URL", ollamaURL())
 	t.Setenv("DOCS_ROOT", docsProjectDir(t))
 
@@ -91,7 +91,7 @@ func TestRAGFunctional(t *testing.T) {
 		require.NoError(t, q.UpsertPoints(ctx, cfg.Qdrant.Collection, []qdrantpkg.Point{pt}))
 	}
 
-	engine := rag.BuildEngineFromConfig(llmCli, q, cfg.Embedding.Model, cfg.Generator.Model, cfg.Qdrant.Collection)
+	engine := rag.BuildEngineFromConfig(llmCli, q, cfg.Embedding.Model, cfg.Generator.Model, cfg.Qdrant.Collection, cfg.RAG.TopK, cfg.RAG.SystemPrompt)
 
 	t.Run("single_query_uc07", func(t *testing.T) {
 		cctx, cancel := context.WithTimeout(ctx, 15*time.Minute)

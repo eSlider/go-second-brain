@@ -5,5 +5,5 @@ package qdrant
 type Config struct {
 	URL string
 	// Collection is the default logical collection name (optional for API calls that pass name explicitly).
-	Collection string `default:"edelweiss"`
+	Collection string `default:"knowledge"`
 }

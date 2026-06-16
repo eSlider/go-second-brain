@@ -1,6 +1,6 @@
 package docsparse
 
-import "git.produktor.io/edelweiss/docs/services/internal/idkind"
+import "github.com/eSlider/go-second-brain/services/internal/idkind"
 
 // Node is a graph entity extracted from documentation.
 type Node struct {

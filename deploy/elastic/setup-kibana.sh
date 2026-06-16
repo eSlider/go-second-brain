@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Provision Kibana data view + dashboard for Edelweiss logs/stats.
+# Provision Kibana data view + dashboard for DemoCare logs/stats.
 #
 # Idempotent: re-running overwrites the saved objects with the same IDs.
 # Requires the elastic profile to be up (Elasticsearch + Kibana + Filebeat).
@@ -8,24 +8,24 @@
 #   KIBANA_URL=http://127.0.0.1:5601 ./deploy/elastic/setup-kibana.sh
 #
 # Creates:
-#   - data view  : edelweiss-filebeat            (filebeat-*)
+#   - data view  : knowledge-filebeat            (filebeat-*)
 #   - visualizations:
-#       edelweiss-bot-qpm                        (queries/min)
-#       edelweiss-bot-latency                    (latency p50/p95 ms)
-#       edelweiss-bot-errors                     (failed queries/min)
-#       edelweiss-bot-top-senders                (top senders)
-#       edelweiss-logs-by-container              (log lines per container)
-#       edelweiss-ingest-batches                 (ingestor batch latency)
-#       edelweiss-errors-by-service              (errors per container)
-#       edelweiss-ollama-errors                  (Ollama/embed probe failures)
-#       edelweiss-ollama-activity                (Ollama/embed-related log volume)
-#       edelweiss-qdrant-container-logs          (Qdrant container throughput)
-#       edelweiss-qdrant-app-events              (upserts + bot Qdrant messages)
+#       knowledge-bot-qpm                        (queries/min)
+#       knowledge-bot-latency                    (latency p50/p95 ms)
+#       knowledge-bot-errors                     (failed queries/min)
+#       knowledge-bot-top-senders                (top senders)
+#       knowledge-logs-by-container              (log lines per container)
+#       knowledge-ingest-batches                 (ingestor batch latency)
+#       knowledge-errors-by-service              (errors per container)
+#       knowledge-ollama-errors                  (Ollama/embed probe failures)
+#       knowledge-ollama-activity                (Ollama/embed-related log volume)
+#       knowledge-qdrant-container-logs          (Qdrant container throughput)
+#       knowledge-qdrant-app-events              (upserts + bot Qdrant messages)
 #   - dashboards:
-#       edelweiss-overview                       (Edelweiss · Logs & Bot stats — общий)
-#       edelweiss-rag                            (RAG: запросы бота)
-#       edelweiss-ollama                         (Ollama/embed через логи bot/ingestor)
-#       edelweiss-qdrant                         (Qdrant: контейнер + приложение)
+#       knowledge-overview                       (DemoCare · Logs & Bot stats — общий)
+#       knowledge-rag                            (RAG: запросы бота)
+#       knowledge-ollama                         (Ollama/embed через логи bot/ingestor)
+#       knowledge-qdrant                         (Qdrant: контейнер + приложение)
 
 set -euo pipefail
 
@@ -63,14 +63,14 @@ put_so() {
 }
 
 ensure_data_view() {
-  echo "Data view: edelweiss-filebeat (filebeat-*)"
+  echo "Data view: knowledge-filebeat (filebeat-*)"
   # POST is fine even if it exists (we delete first to keep id stable).
-  curl_kbn DELETE "/api/data_views/data_view/edelweiss-filebeat" >/dev/null 2>&1 || true
+  curl_kbn DELETE "/api/data_views/data_view/knowledge-filebeat" >/dev/null 2>&1 || true
   curl_kbn POST "/api/data_views/data_view" '{
     "data_view": {
-      "id": "edelweiss-filebeat",
+      "id": "knowledge-filebeat",
       "title": "filebeat-*",
-      "name": "Edelweiss · filebeat",
+      "name": "DemoCare · filebeat",
       "timeFieldName": "@timestamp",
       "allowNoIndex": true
     },
@@ -92,7 +92,7 @@ viz_payload() {
       kibanaSavedObjectMeta: { searchSourceJSON: "{\"query\":{\"language\":\"kuery\",\"query\":\"\"},\"filter\":[]}" }
     },
     references: [
-      { id: "edelweiss-filebeat", name: "kibanaSavedObjectMeta.searchSourceJSON.index", type: "index-pattern" }
+      { id: "knowledge-filebeat", name: "kibanaSavedObjectMeta.searchSourceJSON.index", type: "index-pattern" }
     ]
   }'
 }
@@ -105,7 +105,7 @@ vis_bot_qpm='{
     "id":"v-bot-qpm","type":"timeseries","index_pattern":"filebeat-*","time_field":"@timestamp",
     "interval":"","axis_position":"left","axis_formatter":"number","show_grid":1,"show_legend":1,
     "default_index_pattern":"filebeat-*","default_timefield":"@timestamp","use_kibana_indexes":false,
-    "filter":{"language":"kuery","query":"edelweiss.event : \"bot_query\""},
+    "filter":{"language":"kuery","query":"knowledge.event : \"bot_query\""},
     "series":[{
       "id":"s1","label":"Queries","color":"#54B399","chart_type":"line","fill":"0.5",
       "split_mode":"everything","stacked":"none","line_width":2,"point_size":1,"axis_position":"right",
@@ -121,19 +121,19 @@ vis_bot_latency='{
     "id":"v-bot-lat","type":"timeseries","index_pattern":"filebeat-*","time_field":"@timestamp",
     "interval":"","axis_position":"left","axis_formatter":"number","show_grid":1,"show_legend":1,
     "default_index_pattern":"filebeat-*","default_timefield":"@timestamp","use_kibana_indexes":false,
-    "filter":{"language":"kuery","query":"edelweiss.event : \"bot_query\""},
+    "filter":{"language":"kuery","query":"knowledge.event : \"bot_query\""},
     "series":[
       {
         "id":"s50","label":"p50","color":"#6092C0","chart_type":"line","fill":"0",
         "split_mode":"everything","stacked":"none","line_width":2,"point_size":1,"axis_position":"right",
         "formatter":"number","separate_axis":0,"split_color_mode":"kibana",
-        "metrics":[{"id":"m50","type":"percentile","field":"edelweiss.latency_ms","percentiles":[{"id":"p50","mode":"line","value":"50","percentile":""}]}]
+        "metrics":[{"id":"m50","type":"percentile","field":"knowledge.latency_ms","percentiles":[{"id":"p50","mode":"line","value":"50","percentile":""}]}]
       },
       {
         "id":"s95","label":"p95","color":"#D36086","chart_type":"line","fill":"0",
         "split_mode":"everything","stacked":"none","line_width":2,"point_size":1,"axis_position":"right",
         "formatter":"number","separate_axis":0,"split_color_mode":"kibana",
-        "metrics":[{"id":"m95","type":"percentile","field":"edelweiss.latency_ms","percentiles":[{"id":"p95","mode":"line","value":"95","percentile":""}]}]
+        "metrics":[{"id":"m95","type":"percentile","field":"knowledge.latency_ms","percentiles":[{"id":"p95","mode":"line","value":"95","percentile":""}]}]
       }
     ]
   }
@@ -145,7 +145,7 @@ vis_bot_errors='{
     "id":"v-bot-err","type":"timeseries","index_pattern":"filebeat-*","time_field":"@timestamp",
     "interval":"","axis_position":"left","axis_formatter":"number","show_grid":1,"show_legend":1,
     "default_index_pattern":"filebeat-*","default_timefield":"@timestamp","use_kibana_indexes":false,
-    "filter":{"language":"kuery","query":"edelweiss.event : \"bot_query\" and edelweiss.ok : false"},
+    "filter":{"language":"kuery","query":"knowledge.event : \"bot_query\" and knowledge.ok : false"},
     "series":[{
       "id":"se","label":"Failed","color":"#E7664C","chart_type":"bar","fill":"0.7",
       "split_mode":"everything","stacked":"none","line_width":1,"point_size":0,"axis_position":"right",
@@ -161,12 +161,12 @@ vis_top_senders='{
     "id":"v-top-sender","type":"top_n","index_pattern":"filebeat-*","time_field":"@timestamp",
     "interval":"","axis_position":"left","axis_formatter":"number","show_grid":1,"show_legend":1,
     "default_index_pattern":"filebeat-*","default_timefield":"@timestamp","use_kibana_indexes":false,
-    "filter":{"language":"kuery","query":"edelweiss.event : \"bot_query\""},
+    "filter":{"language":"kuery","query":"knowledge.event : \"bot_query\""},
     "bar_color_rules":[{"id":"r1"}],
     "series":[{
       "id":"st","label":"queries","color":"#54B399","chart_type":"bar","fill":"0.7",
       "split_mode":"terms","stacked":"none","line_width":1,"point_size":0,"axis_position":"right",
-      "terms_field":"edelweiss.sender","terms_size":"10","terms_order_by":"_count","terms_direction":"desc",
+      "terms_field":"knowledge.sender","terms_size":"10","terms_order_by":"_count","terms_direction":"desc",
       "formatter":"number","separate_axis":0,"split_color_mode":"kibana",
       "metrics":[{"id":"mt","type":"count"}]
     }]
@@ -196,7 +196,7 @@ vis_errors_by_service='{
     "id":"v-err-svc","type":"timeseries","index_pattern":"filebeat-*","time_field":"@timestamp",
     "interval":"","axis_position":"left","axis_formatter":"number","show_grid":1,"show_legend":1,
     "default_index_pattern":"filebeat-*","default_timefield":"@timestamp","use_kibana_indexes":false,
-    "filter":{"language":"kuery","query":"edelweiss.level : \"ERROR\" or message : *panic*"},
+    "filter":{"language":"kuery","query":"knowledge.level : \"ERROR\" or message : *panic*"},
     "series":[{
       "id":"sE","label":"{{container.labels.com_docker_compose_service}}","color":"#E7664C",
       "chart_type":"bar","fill":"0.7","stacked":"stacked","line_width":1,"point_size":0,
@@ -214,12 +214,12 @@ vis_ingest_batches='{
     "id":"v-ing-batch","type":"timeseries","index_pattern":"filebeat-*","time_field":"@timestamp",
     "interval":"","axis_position":"left","axis_formatter":"number","show_grid":1,"show_legend":1,
     "default_index_pattern":"filebeat-*","default_timefield":"@timestamp","use_kibana_indexes":false,
-    "filter":{"language":"kuery","query":"edelweiss.event : \"ingest_batch_upserted\""},
+    "filter":{"language":"kuery","query":"knowledge.event : \"ingest_batch_upserted\""},
     "series":[{
       "id":"sib","label":"avg ms","color":"#9170B8","chart_type":"line","fill":"0.3",
       "split_mode":"everything","stacked":"none","line_width":2,"point_size":1,
       "axis_position":"right","formatter":"number","separate_axis":0,"split_color_mode":"kibana",
-      "metrics":[{"id":"mib","type":"avg","field":"edelweiss.latency_ms"}]
+      "metrics":[{"id":"mib","type":"avg","field":"knowledge.latency_ms"}]
     }]
   }
 }'
@@ -231,7 +231,7 @@ vis_ollama_errors='{
     "id":"v-ollama-err","type":"timeseries","index_pattern":"filebeat-*","time_field":"@timestamp",
     "interval":"","axis_position":"left","axis_formatter":"number","show_grid":1,"show_legend":1,
     "default_index_pattern":"filebeat-*","default_timefield":"@timestamp","use_kibana_indexes":false,
-    "filter":{"language":"kuery","query":"container.labels.com_docker_compose_service : \"matrix-bot\" and edelweiss.msg : \"ollama embed probe\" and edelweiss.level : \"ERROR\""},
+    "filter":{"language":"kuery","query":"container.labels.com_docker_compose_service : \"matrix-bot\" and knowledge.msg : \"ollama embed probe\" and knowledge.level : \"ERROR\""},
     "series":[{
       "id":"soe","label":"Failures","color":"#E7664C","chart_type":"bar","fill":"0.7",
       "split_mode":"everything","stacked":"none","line_width":1,"point_size":0,"axis_position":"right",
@@ -247,7 +247,7 @@ vis_ollama_activity='{
     "id":"v-ollama-act","type":"timeseries","index_pattern":"filebeat-*","time_field":"@timestamp",
     "interval":"","axis_position":"left","axis_formatter":"number","show_grid":1,"show_legend":1,
     "default_index_pattern":"filebeat-*","default_timefield":"@timestamp","use_kibana_indexes":false,
-    "filter":{"language":"kuery","query":"container.labels.com_docker_compose_service : (\"matrix-bot\" or \"kg-ingestor\") and (edelweiss.msg : *embed* or edelweiss.msg : *ollama* or edelweiss.err : *ollama* or edelweiss.err : *embeddings*)"},
+    "filter":{"language":"kuery","query":"container.labels.com_docker_compose_service : (\"matrix-bot\" or \"kg-ingestor\") and (knowledge.msg : *embed* or knowledge.msg : *ollama* or knowledge.err : *ollama* or knowledge.err : *embeddings*)"},
     "series":[{
       "id":"soa","label":"Events","color":"#6092C0","chart_type":"line","fill":"0.35",
       "split_mode":"everything","stacked":"none","line_width":2,"point_size":1,"axis_position":"right",
@@ -279,7 +279,7 @@ vis_qdrant_app='{
     "id":"v-qdr-app","type":"timeseries","index_pattern":"filebeat-*","time_field":"@timestamp",
     "interval":"","axis_position":"left","axis_formatter":"number","show_grid":1,"show_legend":1,
     "default_index_pattern":"filebeat-*","default_timefield":"@timestamp","use_kibana_indexes":false,
-    "filter":{"language":"kuery","query":"(container.labels.com_docker_compose_service : \"kg-ingestor\" and edelweiss.event : \"ingest_batch_upserted\") or (container.labels.com_docker_compose_service : \"matrix-bot\" and edelweiss.msg : *qdrant*)"},
+    "filter":{"language":"kuery","query":"(container.labels.com_docker_compose_service : \"kg-ingestor\" and knowledge.event : \"ingest_batch_upserted\") or (container.labels.com_docker_compose_service : \"matrix-bot\" and knowledge.msg : *qdrant*)"},
     "series":[{
       "id":"sqa","label":"Events","color":"#9170B8","chart_type":"line","fill":"0.25",
       "split_mode":"everything","stacked":"none","line_width":2,"point_size":1,"axis_position":"right",
@@ -291,23 +291,23 @@ vis_qdrant_app='{
 
 create_visualizations() {
   echo "Visualizations:"
-  put_so visualization edelweiss-bot-qpm           "$(viz_payload 'Edelweiss · Bot queries per minute' "$(echo "$vis_bot_qpm" | jq -c .)")"
-  put_so visualization edelweiss-bot-latency       "$(viz_payload 'Edelweiss · Bot latency (ms)'         "$(echo "$vis_bot_latency" | jq -c .)")"
-  put_so visualization edelweiss-bot-errors        "$(viz_payload 'Edelweiss · Bot failed queries'        "$(echo "$vis_bot_errors" | jq -c .)")"
-  put_so visualization edelweiss-bot-top-senders   "$(viz_payload 'Edelweiss · Top bot users'             "$(echo "$vis_top_senders" | jq -c .)")"
-  put_so visualization edelweiss-logs-by-container "$(viz_payload 'Edelweiss · Log lines by container'    "$(echo "$vis_logs_by_container" | jq -c .)")"
-  put_so visualization edelweiss-errors-by-service "$(viz_payload 'Edelweiss · Errors per service'        "$(echo "$vis_errors_by_service" | jq -c .)")"
-  put_so visualization edelweiss-ingest-batches    "$(viz_payload 'Edelweiss · Ingestor batch latency'    "$(echo "$vis_ingest_batches" | jq -c .)")"
-  put_so visualization edelweiss-ollama-errors     "$(viz_payload 'Edelweiss · Ollama embed probe failures' "$(echo "$vis_ollama_errors" | jq -c .)")"
-  put_so visualization edelweiss-ollama-activity   "$(viz_payload 'Edelweiss · Ollama/embed activity'      "$(echo "$vis_ollama_activity" | jq -c .)")"
-  put_so visualization edelweiss-qdrant-container-logs "$(viz_payload 'Edelweiss · Qdrant container logs'  "$(echo "$vis_qdrant_container" | jq -c .)")"
-  put_so visualization edelweiss-qdrant-app-events "$(viz_payload 'Edelweiss · Qdrant app events'        "$(echo "$vis_qdrant_app" | jq -c .)")"
+  put_so visualization knowledge-bot-qpm           "$(viz_payload 'DemoCare · Bot queries per minute' "$(echo "$vis_bot_qpm" | jq -c .)")"
+  put_so visualization knowledge-bot-latency       "$(viz_payload 'DemoCare · Bot latency (ms)'         "$(echo "$vis_bot_latency" | jq -c .)")"
+  put_so visualization knowledge-bot-errors        "$(viz_payload 'DemoCare · Bot failed queries'        "$(echo "$vis_bot_errors" | jq -c .)")"
+  put_so visualization knowledge-bot-top-senders   "$(viz_payload 'DemoCare · Top bot users'             "$(echo "$vis_top_senders" | jq -c .)")"
+  put_so visualization knowledge-logs-by-container "$(viz_payload 'DemoCare · Log lines by container'    "$(echo "$vis_logs_by_container" | jq -c .)")"
+  put_so visualization knowledge-errors-by-service "$(viz_payload 'DemoCare · Errors per service'        "$(echo "$vis_errors_by_service" | jq -c .)")"
+  put_so visualization knowledge-ingest-batches    "$(viz_payload 'DemoCare · Ingestor batch latency'    "$(echo "$vis_ingest_batches" | jq -c .)")"
+  put_so visualization knowledge-ollama-errors     "$(viz_payload 'DemoCare · Ollama embed probe failures' "$(echo "$vis_ollama_errors" | jq -c .)")"
+  put_so visualization knowledge-ollama-activity   "$(viz_payload 'DemoCare · Ollama/embed activity'      "$(echo "$vis_ollama_activity" | jq -c .)")"
+  put_so visualization knowledge-qdrant-container-logs "$(viz_payload 'DemoCare · Qdrant container logs'  "$(echo "$vis_qdrant_container" | jq -c .)")"
+  put_so visualization knowledge-qdrant-app-events "$(viz_payload 'DemoCare · Qdrant app events'        "$(echo "$vis_qdrant_app" | jq -c .)")"
 }
 
 # --- Dashboard --------------------------------------------------------------
 
 create_dashboard() {
-  echo "Dashboard: edelweiss-overview"
+  echo "Dashboard: knowledge-overview"
 
   local panels
   panels=$(jq -cn '
@@ -325,13 +325,13 @@ create_dashboard() {
   local refs
   refs=$(jq -cn '
     [
-      { id:"edelweiss-bot-qpm",           name:"panel_1", type:"visualization" },
-      { id:"edelweiss-bot-latency",       name:"panel_2", type:"visualization" },
-      { id:"edelweiss-bot-errors",        name:"panel_3", type:"visualization" },
-      { id:"edelweiss-bot-top-senders",   name:"panel_4", type:"visualization" },
-      { id:"edelweiss-logs-by-container", name:"panel_5", type:"visualization" },
-      { id:"edelweiss-errors-by-service", name:"panel_6", type:"visualization" },
-      { id:"edelweiss-ingest-batches",    name:"panel_7", type:"visualization" }
+      { id:"knowledge-bot-qpm",           name:"panel_1", type:"visualization" },
+      { id:"knowledge-bot-latency",       name:"panel_2", type:"visualization" },
+      { id:"knowledge-bot-errors",        name:"panel_3", type:"visualization" },
+      { id:"knowledge-bot-top-senders",   name:"panel_4", type:"visualization" },
+      { id:"knowledge-logs-by-container", name:"panel_5", type:"visualization" },
+      { id:"knowledge-errors-by-service", name:"panel_6", type:"visualization" },
+      { id:"knowledge-ingest-batches",    name:"panel_7", type:"visualization" }
     ]
   ')
 
@@ -341,7 +341,7 @@ create_dashboard() {
     --argjson refs "$refs" '
     {
       attributes: {
-        title: "Edelweiss · Logs & Bot stats",
+        title: "DemoCare · Logs & Bot stats",
         description: "Operational dashboard for the Matrix bot, ingestor and Compose containers (Filebeat → Elasticsearch).",
         hits: 0,
         panelsJSON: ($panels|tostring),
@@ -358,13 +358,13 @@ create_dashboard() {
       references: $refs
     }')
 
-  curl_kbn POST "/api/saved_objects/dashboard/edelweiss-overview?overwrite=true" "$body" >/dev/null
-  echo "Dashboard: edelweiss-overview — ${KIBANA_URL}/app/dashboards#/view/edelweiss-overview"
+  curl_kbn POST "/api/saved_objects/dashboard/knowledge-overview?overwrite=true" "$body" >/dev/null
+  echo "Dashboard: knowledge-overview — ${KIBANA_URL}/app/dashboards#/view/knowledge-overview"
 }
 
 # RAG = Matrix bot queries (same panels as overview subset).
 create_dashboard_rag() {
-  echo "Dashboard: edelweiss-rag"
+  echo "Dashboard: knowledge-rag"
   local panels refs body
   panels=$(jq -cn '
     [
@@ -376,10 +376,10 @@ create_dashboard_rag() {
   ')
   refs=$(jq -cn '
     [
-      { id:"edelweiss-bot-qpm",         name:"panel_1", type:"visualization" },
-      { id:"edelweiss-bot-latency",     name:"panel_2", type:"visualization" },
-      { id:"edelweiss-bot-errors",      name:"panel_3", type:"visualization" },
-      { id:"edelweiss-bot-top-senders", name:"panel_4", type:"visualization" }
+      { id:"knowledge-bot-qpm",         name:"panel_1", type:"visualization" },
+      { id:"knowledge-bot-latency",     name:"panel_2", type:"visualization" },
+      { id:"knowledge-bot-errors",      name:"panel_3", type:"visualization" },
+      { id:"knowledge-bot-top-senders", name:"panel_4", type:"visualization" }
     ]
   ')
   body=$(jq -nc \
@@ -387,7 +387,7 @@ create_dashboard_rag() {
     --argjson refs "$refs" '
     {
       attributes: {
-        title: "Edelweiss · RAG (bot queries)",
+        title: "DemoCare · RAG (bot queries)",
         description: "Latency, volume, and failures for RAG answers (event=bot_query). Ollama/Qdrant/Neo4j must be reachable from the bot container.",
         hits: 0,
         panelsJSON: ($panels|tostring),
@@ -403,12 +403,12 @@ create_dashboard_rag() {
       },
       references: $refs
     }')
-  curl_kbn POST "/api/saved_objects/dashboard/edelweiss-rag?overwrite=true" "$body" >/dev/null
-  echo "  ${KIBANA_URL}/app/dashboards#/view/edelweiss-rag"
+  curl_kbn POST "/api/saved_objects/dashboard/knowledge-rag?overwrite=true" "$body" >/dev/null
+  echo "  ${KIBANA_URL}/app/dashboards#/view/knowledge-rag"
 }
 
 create_dashboard_ollama() {
-  echo "Dashboard: edelweiss-ollama"
+  echo "Dashboard: knowledge-ollama"
   local panels refs body
   panels=$(jq -cn '
     [
@@ -418,8 +418,8 @@ create_dashboard_ollama() {
   ')
   refs=$(jq -cn '
     [
-      { id:"edelweiss-ollama-errors",   name:"panel_1", type:"visualization" },
-      { id:"edelweiss-ollama-activity", name:"panel_2", type:"visualization" }
+      { id:"knowledge-ollama-errors",   name:"panel_1", type:"visualization" },
+      { id:"knowledge-ollama-activity", name:"panel_2", type:"visualization" }
     ]
   ')
   body=$(jq -nc \
@@ -427,7 +427,7 @@ create_dashboard_ollama() {
     --argjson refs "$refs" '
     {
       attributes: {
-        title: "Edelweiss · Ollama / embed (via logs)",
+        title: "DemoCare · Ollama / embed (via logs)",
         description: "Ollama listens on the host; only errors and embed-related lines from matrix-bot / kg-ingestor appear here.",
         hits: 0,
         panelsJSON: ($panels|tostring),
@@ -443,12 +443,12 @@ create_dashboard_ollama() {
       },
       references: $refs
     }')
-  curl_kbn POST "/api/saved_objects/dashboard/edelweiss-ollama?overwrite=true" "$body" >/dev/null
-  echo "  ${KIBANA_URL}/app/dashboards#/view/edelweiss-ollama"
+  curl_kbn POST "/api/saved_objects/dashboard/knowledge-ollama?overwrite=true" "$body" >/dev/null
+  echo "  ${KIBANA_URL}/app/dashboards#/view/knowledge-ollama"
 }
 
 create_dashboard_qdrant() {
-  echo "Dashboard: edelweiss-qdrant"
+  echo "Dashboard: knowledge-qdrant"
   local panels refs body
   panels=$(jq -cn '
     [
@@ -458,8 +458,8 @@ create_dashboard_qdrant() {
   ')
   refs=$(jq -cn '
     [
-      { id:"edelweiss-qdrant-container-logs", name:"panel_1", type:"visualization" },
-      { id:"edelweiss-qdrant-app-events",     name:"panel_2", type:"visualization" }
+      { id:"knowledge-qdrant-container-logs", name:"panel_1", type:"visualization" },
+      { id:"knowledge-qdrant-app-events",     name:"panel_2", type:"visualization" }
     ]
   ')
   body=$(jq -nc \
@@ -467,7 +467,7 @@ create_dashboard_qdrant() {
     --argjson refs "$refs" '
     {
       attributes: {
-        title: "Edelweiss · Qdrant",
+        title: "DemoCare · Qdrant",
         description: "Vector store: container log volume + ingest upserts and bot-side Qdrant messages.",
         hits: 0,
         panelsJSON: ($panels|tostring),
@@ -483,8 +483,8 @@ create_dashboard_qdrant() {
       },
       references: $refs
     }')
-  curl_kbn POST "/api/saved_objects/dashboard/edelweiss-qdrant?overwrite=true" "$body" >/dev/null
-  echo "  ${KIBANA_URL}/app/dashboards#/view/edelweiss-qdrant"
+  curl_kbn POST "/api/saved_objects/dashboard/knowledge-qdrant?overwrite=true" "$body" >/dev/null
+  echo "  ${KIBANA_URL}/app/dashboards#/view/knowledge-qdrant"
 }
 
 main() {
@@ -498,7 +498,7 @@ main() {
   create_dashboard_ollama
   create_dashboard_qdrant
   echo ""
-  echo "All dashboards ready. Bot monitoring = edelweiss-overview."
+  echo "All dashboards ready. Bot monitoring = knowledge-overview."
 }
 
 main "$@"

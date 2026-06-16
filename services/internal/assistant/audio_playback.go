@@ -72,7 +72,7 @@ func playbackCommand(sampleRate int) (string, []string, error) {
 			"--format=s16le",
 			fmt.Sprintf("--rate=%d", sampleRate),
 			"--channels=1",
-			"--stream-name=edelweiss-assistant",
+			"--stream-name=second-brain-assistant",
 		}, nil
 	}
 	return "", nil, fmt.Errorf("assistant playback: neither pw-cat nor paplay found")

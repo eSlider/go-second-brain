@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"git.produktor.io/edelweiss/docs/services/pkg/httpjson"
+	"github.com/eSlider/go-second-brain/services/pkg/httpjson"
 )
 
 // Client wraps Ollama /api/embeddings and /api/generate HTTP calls.

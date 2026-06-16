@@ -1,6 +1,6 @@
-site_name: "Edelweiss — база знаний"
-site_description: "Pflegedienst Edelweiss: интервью, аналитика, кейсы, процессы"
-site_author: "Edelweiss / NAI"
+site_name: "go-second-brain — demo knowledge base"
+site_description: "DemoCare Pflegedienst: synthetic domain corpus for the go-second-brain SDK"
+site_author: "eSlider"
 site_url: ""
 
 # `docs/` — весь контент сайта: `reports/`, `project/`, STT (исключены), `_scripts/`. README и AGENTS — виртуально из корня через gen-files.
@@ -63,7 +63,7 @@ theme:
 plugins:
   - gen-files:
       scripts:
-        - docs/_scripts/gen_edelweiss.py
+        - docs/_scripts/gen_virtual_docs.py
   - search:
       lang:
         - ru

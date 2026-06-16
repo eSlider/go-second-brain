@@ -1,4 +1,4 @@
-// Package neo4j provides Neo4j driver wiring for Edelweiss services.
+// Package neo4j provides Neo4j driver wiring for knowledge-graph services.
 package neo4j
 
 import "context"

@@ -1,7 +1,7 @@
-# Статическая сборка MkDocs (если когда-нибудь запустят `mkdocs build` без site_dir в /tmp)
+# MkDocs static build output
 /site/
 
-# Кэши и служебные артефакты
+# Caches
 **/__pycache__/
 **/.cache/
 **/.pytest_cache/
@@ -10,17 +10,19 @@
 *.pyc
 .DS_Store
 
-# Локальные секреты (см. .env.example)
+# Local secrets and overrides
 .env
-.env
-.env
+config.yaml
 
-# Ассистент: артефакты рантайма (аудио, транскрипты, логи производительности)
+# Assistant runtime artifacts
 services/var/audio-rec/
 services/var/tss/
 services/var/stt/
 services/var/logs/
 services/var/run/
 
-.ideaservices/bot
+# IDE / build artifacts
+.idea/
+services/integration.test
+services/bot
 services/ingestor

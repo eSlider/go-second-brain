@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"git.produktor.io/edelweiss/docs/services/internal/config"
-	"git.produktor.io/edelweiss/docs/services/pkg/cartesia"
-	"git.produktor.io/edelweiss/docs/services/pkg/inworld"
+	"github.com/eSlider/go-second-brain/services/internal/config"
+	"github.com/eSlider/go-second-brain/services/pkg/cartesia"
+	"github.com/eSlider/go-second-brain/services/pkg/inworld"
 )
 
 type Runtime struct {

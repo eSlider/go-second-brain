@@ -10,23 +10,23 @@ processors:
   - add_docker_metadata:
       host: unix:///var/run/docker.sock
 
-  # Go services (matrix-bot, kg-ingestor) log JSON lines to stderr; decode for Kibana filters (edelweiss.msg, edelweiss.level, edelweiss.err).
+  # Go services (matrix-bot, kg-ingestor) log JSON lines to stderr; decode for Kibana filters (knowledge.msg, knowledge.level, knowledge.err).
   # Slog JSON lines start with {"time": — avoids decoding Filebeat/Elastic JSON (different shape).
   - decode_json_fields:
       fields: ["message"]
-      target: "edelweiss"
+      target: "knowledge"
       overwrite_keys: false
       add_error_key: true
       when:
         regexp:
           message: '^\{"time":'
 
-# Prefer project containers when the Compose project name is "edelweiss" (see compose.yml: name).
+# Prefer project containers when the Compose project name is "knowledge" (see compose.yml: name).
   - drop_event:
       when:
         not:
           equals:
-            container.labels.com_docker_compose_project: edelweiss
+            container.labels.com_docker_compose_project: knowledge
 
 setup.template.settings:
   index.number_of_replicas: 0

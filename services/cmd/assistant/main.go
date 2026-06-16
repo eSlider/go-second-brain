@@ -7,9 +7,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"git.produktor.io/edelweiss/docs/services/internal/assistant"
-	"git.produktor.io/edelweiss/docs/services/internal/config"
-	"git.produktor.io/edelweiss/docs/services/internal/slogx"
+	"github.com/eSlider/go-second-brain/services/internal/assistant"
+	"github.com/eSlider/go-second-brain/services/internal/config"
+	"github.com/eSlider/go-second-brain/services/internal/slogx"
 )
 
 func main() {

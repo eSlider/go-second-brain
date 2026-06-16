@@ -1,4 +1,4 @@
-# Virtual MkDocs pages from repo root (README, AGENTS only). `docs/project/` is real on disk.
+# Virtual MkDocs pages from repo root (README, AGENTS). docs/project/ is on disk.
 from pathlib import Path
 
 import mkdocs_gen_files

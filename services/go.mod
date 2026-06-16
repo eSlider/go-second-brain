@@ -1,11 +1,10 @@
-// Module path follows git remote origin: git@git.produktor.io:edelweiss/docs.git (this Go code lives under services/).
-module git.produktor.io/edelweiss/docs/services
+module github.com/eSlider/go-second-brain/services
 
 go 1.26
 
 require (
 	github.com/coder/websocket v1.8.14
-	github.com/eslider/go-config v0.0.0
+	github.com/eslider/go-config v0.4.0
 	github.com/eslider/go-matrix-bot v0.3.2-0.20260213130250-b8ee18f8490b
 	github.com/go-viper/mapstructure/v2 v2.5.0
 	github.com/mcuadros/go-defaults v1.2.0
@@ -84,5 +83,3 @@ require (
 	golang.org/x/text v0.34.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/eslider/go-config => /home/ano/projects/eSlider/go-env

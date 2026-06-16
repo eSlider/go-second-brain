@@ -11,12 +11,12 @@ import (
 	"syscall"
 	"time"
 
-	"git.produktor.io/edelweiss/docs/services/internal/config"
-	"git.produktor.io/edelweiss/docs/services/internal/graph"
-	"git.produktor.io/edelweiss/docs/services/internal/rag"
-	"git.produktor.io/edelweiss/docs/services/internal/slogx"
-	"git.produktor.io/edelweiss/docs/services/pkg/ollama"
-	"git.produktor.io/edelweiss/docs/services/pkg/qdrant"
+	"github.com/eSlider/go-second-brain/services/internal/config"
+	"github.com/eSlider/go-second-brain/services/internal/graph"
+	"github.com/eSlider/go-second-brain/services/internal/rag"
+	"github.com/eSlider/go-second-brain/services/internal/slogx"
+	"github.com/eSlider/go-second-brain/services/pkg/ollama"
+	"github.com/eSlider/go-second-brain/services/pkg/qdrant"
 	matrix "github.com/eslider/go-matrix-bot"
 	"maunium.net/go/mautrix/event"
 	"maunium.net/go/mautrix/id"
@@ -73,7 +73,7 @@ func run() int {
 	}
 	log.Info("rag backend ready", slog.String("collection", cfg.Qdrant.Collection), slog.Int("embed_dim", dim))
 
-	engine := rag.BuildEngineFromConfig(llmCli, qdr, cfg.Embedding.Model, cfg.Generator.Model, cfg.Qdrant.Collection)
+	engine := rag.BuildEngineFromConfig(llmCli, qdr, cfg.Embedding.Model, cfg.Generator.Model, cfg.Qdrant.Collection, cfg.RAG.TopK, cfg.RAG.SystemPrompt)
 	bot, err := matrix.NewBot(matrix.Config{
 		Homeserver: cfg.Matrix.Homeserver(),
 		Username:   cfg.Matrix.ResolvedUser(),

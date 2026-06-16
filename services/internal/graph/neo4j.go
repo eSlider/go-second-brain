@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"strings"
 
-	"git.produktor.io/edelweiss/docs/services/internal/docsparse"
-	"git.produktor.io/edelweiss/docs/services/internal/idkind"
-	neon "git.produktor.io/edelweiss/docs/services/pkg/neo4j"
+	"github.com/eSlider/go-second-brain/services/internal/docsparse"
+	"github.com/eSlider/go-second-brain/services/internal/idkind"
+	neon "github.com/eSlider/go-second-brain/services/pkg/neo4j"
 
 	driver "github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
