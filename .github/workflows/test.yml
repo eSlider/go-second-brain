@@ -31,7 +31,7 @@ jobs:
         env:
           CGO_ENABLED: "1"
         with:
-          version: v1.64.8
+          version: latest
           working-directory: services
 
   gitleaks:

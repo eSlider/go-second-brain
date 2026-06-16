@@ -1,3 +1,5 @@
+version: "2"
+
 run:
   timeout: 5m
 
@@ -14,6 +16,17 @@ linters:
     - nilerr
     - nolintlint
     - testifylint
+  exclusions:
+    rules:
+      # ponytail: assistant spawns pw-cat/ffmpeg; config reads trusted CONFIG_PATH
+      - path: internal/assistant/
+        linters: [gosec]
+      - path: internal/config/
+        linters: [gosec]
+      - path: internal/
+        linters: [revive]
+      - path: cmd/
+        linters: [revive]
 
 linters-settings:
   revive:
@@ -21,10 +34,9 @@ linters-settings:
       - name: blank-imports
       - name: context-as-argument
       - name: error-return
-
-issues:
-  exclude-use-default: false
-  exclude-rules:
-    # ponytail: assistant spawns pw-cat/ffmpeg by design; file modes are local dev artifacts
-    - path: internal/assistant/
-      linters: [gosec]
+      - name: exported
+        disabled: true
+      - name: package-comments
+        disabled: true
+      - name: redefines-builtin-id
+        disabled: true

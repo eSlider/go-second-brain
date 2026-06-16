@@ -40,8 +40,8 @@ func New(_ context.Context, cfg *Config) (*Client, error) {
 	if cfg.SampleRate <= 0 {
 		cfg.SampleRate = 16000
 	}
-	copy := *cfg
-	return &Client{cfg: copy}, nil
+	cfgCopy := *cfg
+	return &Client{cfg: cfgCopy}, nil
 }
 
 // Close is a noop for symmetry (each Stream owns its websocket lifecycle).

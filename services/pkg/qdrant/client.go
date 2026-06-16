@@ -124,7 +124,7 @@ func (c *Client) Search(ctx context.Context, collection string, vector []float32
 	if limit > 256 {
 		limit = 256
 	}
-	lim := uint64(limit) //nolint:gosec // G115 — clamped to [1,256]
+	lim := uint64(limit)
 	path := fmt.Sprintf("/collections/%s/points/search", strings.Trim(collection, "/"))
 	var out searchResponse
 	if err := c.HTTP.PostJSON(ctx, path, searchBody{
