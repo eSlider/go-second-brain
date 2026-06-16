@@ -127,15 +127,15 @@ func run() int {
 		md := ans
 		html := matrix.MarkdownToHTML(md)
 		sendErr := bot.SendReply(c, roomID, md, html, sender)
-		fields := append(base,
+		base = append(base,
 			slog.Bool("ok", sendErr == nil),
 			slog.Int("answer_len", len(ans)),
 		)
 		if sendErr != nil {
-			log.Error("bot reply failed", append(fields, slog.String("err", sendErr.Error()))...)
+			log.Error("bot reply failed", append(base, slog.String("err", sendErr.Error()))...)
 			return
 		}
-		log.Info("bot query answered", fields...)
+		log.Info("bot query answered", base...)
 	})
 
 	if err := bot.Run(ctx); err != nil && !errors.Is(err, context.Canceled) {

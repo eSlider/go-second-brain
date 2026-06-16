@@ -24,3 +24,7 @@ linters-settings:
 
 issues:
   exclude-use-default: false
+  exclude-rules:
+    # ponytail: assistant spawns pw-cat/ffmpeg by design; file modes are local dev artifacts
+    - path: internal/assistant/
+      linters: [gosec]

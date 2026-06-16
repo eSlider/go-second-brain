@@ -10,7 +10,3 @@ type Config struct {
 	URL     string
 	Timeout time.Duration `default:"120s"`
 }
-
-//func GetClient(cfg *Config) (ctx context.Context) (client *Client, err error) {
-//	return New(ctx, cfg)
-//}
