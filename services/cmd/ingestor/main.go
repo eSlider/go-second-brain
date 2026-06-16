@@ -1,4 +1,4 @@
-// Command ingestor walks docs/project, updates Neo4j and Qdrant.
+// Command ingestor walks DOCS_ROOT (Markdown corpus), updates Neo4j and Qdrant.
 package main
 
 import (

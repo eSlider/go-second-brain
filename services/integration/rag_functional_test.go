@@ -53,7 +53,7 @@ func TestRAGFunctional(t *testing.T) {
 	t.Setenv("QDRANT_URL", qURL)
 	t.Setenv("QDRANT_COLLECTION", "knowledge_func_test")
 	t.Setenv("OLLAMA_URL", ollamaURL())
-	t.Setenv("DOCS_ROOT", docsProjectDir(t))
+	t.Setenv("DOCS_ROOT", corpusDir(t))
 
 	cfg := config.NewConfig()
 	require.NoError(t, cfg.Load())
@@ -93,12 +93,12 @@ func TestRAGFunctional(t *testing.T) {
 
 	engine := rag.BuildEngineFromConfig(llmCli, q, cfg.Embedding.Model, cfg.Generator.Model, cfg.Qdrant.Collection, cfg.RAG.TopK, cfg.RAG.SystemPrompt)
 
-	t.Run("single_query_uc07", func(t *testing.T) {
+	t.Run("single_query_uc02", func(t *testing.T) {
 		cctx, cancel := context.WithTimeout(ctx, 15*time.Minute)
 		defer cancel()
-		ans, err := engine.Answer(cctx, "Как устроена помесячная Abrechnung (UC-07)?")
+		ans, err := engine.Answer(cctx, "What does UC-02 describe in the sample corpus?")
 		require.NoError(t, err)
-		require.True(t, strings.Contains(strings.ToUpper(ans), "UC-07") || strings.Contains(ans, "Abrechnung"))
+		require.True(t, strings.Contains(strings.ToUpper(ans), "UC-02") || strings.Contains(strings.ToLower(ans), "review"))
 	})
 
 	t.Run("dialogue_multiturn_without_matrix", func(t *testing.T) {
@@ -108,9 +108,9 @@ func TestRAGFunctional(t *testing.T) {
 			query string
 			min   int
 		}{
-			{"turn1_uc01", "Кратко: что описывает кейс UC-01?", 80},
-			{"turn2_subjects", "Какие роли SUBJ упоминаются рядом с intake в базе?", 60},
-			{"turn3_term", "Что такое Pflegegrad одним предложением по глоссарию?", 40},
+			{"turn1_uc01", "Briefly: what does use case UC-01 describe?", 80},
+			{"turn2_subjects", "Which SUBJ roles appear in the sample corpus?", 60},
+			{"turn3_term", "What is sample term in one sentence from the glossary?", 40},
 		}
 		for _, step := range turns {
 			step := step

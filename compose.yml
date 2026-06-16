@@ -90,7 +90,7 @@ services:
       - .env
     environment:
       CONFIG_PATH: /repo/config.yaml
-      DOCS_ROOT: ${COMPOSE_INGEST_DOCS_ROOT:-/repo/docs/project}
+      DOCS_ROOT: ${COMPOSE_INGEST_DOCS_ROOT:-/repo/examples/corpus}
       NEO4J_URI: ${COMPOSE_INGEST_NEO4J_URI:-bolt://neo4j:7687}
       QDRANT_URL: ${COMPOSE_INGEST_QDRANT_URL:-http://qdrant:6333}
       OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}

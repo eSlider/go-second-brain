@@ -10,14 +10,14 @@ Go SDK and reference stack for a self-hosted **second brain**: Markdown knowledg
 
 Built on [go-matrix-bot](https://github.com/eSlider/go-matrix-bot) for Matrix E2E bots and [go-config](https://github.com/eSlider/go-config) for YAML + env configuration.
 
-Includes a synthetic **DemoCare** demo corpus in [`docs/project/`](docs/project/) for ingest and RAG without real PII.
+A minimal synthetic fixture lives in [`examples/corpus/`](examples/corpus/) for ingest and RAG smoke tests — replace it with your own Markdown tree locally.
 
 ## Architecture
 
 ```mermaid
 graph TB
     subgraph "Knowledge Base"
-        MD["docs/project/*.md"]
+        MD["examples/corpus/*.md"]
         DS["docsparse<br/>SUBJ / UC / PAIN IDs"]
     end
 
@@ -70,7 +70,7 @@ One-shot or scheduled indexing of a documentation tree.
 
 ```mermaid
 sequenceDiagram
-    participant Docs as docs/project
+    participant Docs as examples/corpus
     participant Ingestor as cmd/ingestor
     participant Neo4j
     participant Qdrant
@@ -97,7 +97,7 @@ sequenceDiagram
     participant Qdrant
     participant Ollama
 
-    User->>Matrix: !brain How does UC-07 billing work?
+    User->>Matrix: !brain What does UC-01 describe?
     Matrix->>Bot: event
     Bot->>Ollama: embed query
     Bot->>Qdrant: vector search (top-k)
@@ -141,7 +141,7 @@ graph LR
         I["kg-ingestor"]
         B["matrix-bot"]
     end
-    MD2["docs/project"] --> I
+    MD2["examples/corpus"] --> I
     I --> N
     I --> Q
     I --> OL2
@@ -226,7 +226,7 @@ if err != nil {
 }
 defer llm.Close()
 
-vec, err := llm.Embed(ctx, "embeddinggemma", "Pflegegrad Verordnung Abrechnung")
+vec, err := llm.Embed(ctx, "embeddinggemma", "sample workflow knowledge node")
 if err != nil {
     panic(err)
 }
@@ -273,7 +273,7 @@ go run ./cmd/assistant
 
 | Binary | Profile | Description |
 |--------|---------|-------------|
-| [`cmd/ingestor`](services/cmd/ingestor/) | `kg` | Walk `docs/project`, write Neo4j + Qdrant |
+| [`cmd/ingestor`](services/cmd/ingestor/) | `kg` | Walk `examples/corpus` (or `DOCS_ROOT`), write Neo4j + Qdrant |
 | [`cmd/bot`](services/cmd/bot/) | `bot` | Matrix RAG bot via [go-matrix-bot](https://github.com/eSlider/go-matrix-bot) |
 | [`cmd/assistant`](services/cmd/assistant/) | — | Low-latency STT/TTS CLI |
 

@@ -1,9 +1,9 @@
-site_name: "go-second-brain — demo knowledge base"
-site_description: "DemoCare Pflegedienst: synthetic domain corpus for the go-second-brain SDK"
+site_name: "go-second-brain"
+site_description: "Self-hosted knowledge graph + RAG SDK documentation"
 site_author: "eSlider"
 site_url: ""
 
-# `docs/` — весь контент сайта: `reports/`, `project/`, STT (исключены), `_scripts/`. README и AGENTS — виртуально из корня через gen-files.
+# `docs/` — SDK system docs; README and AGENTS virtual from repo root via gen-files.
 docs_dir: docs
 
 # Не складывать сгенерированный сайт в репозиторий (том .:/docs); только рендер в памяти/в /tmp

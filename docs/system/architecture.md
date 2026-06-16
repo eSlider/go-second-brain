@@ -8,8 +8,9 @@ go-second-brain/
 ├── .env.example          # secret placeholders
 ├── compose.yml           # Neo4j, Qdrant, ingestor, Matrix bot
 ├── docs/
-│   ├── system/           # SDK docs for agents (this tree)
-│   └── project/          # demo Markdown knowledge corpus
+│   └── system/           # SDK docs for agents (this tree)
+├── examples/
+│   └── corpus/           # tiny synthetic Markdown fixture (tests / smoke ingest)
 └── services/
     ├── cmd/              # ingestor, bot, assistant binaries
     ├── pkg/              # public SDK packages
@@ -20,7 +21,7 @@ go-second-brain/
 
 ```mermaid
 flowchart LR
-  MD["docs/project/*.md"]
+  MD["examples/corpus/*.md"]
   Ingestor["cmd/ingestor"]
   Neo4j["Neo4j graph"]
   Qdrant["Qdrant vectors"]

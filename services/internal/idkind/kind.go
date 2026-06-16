@@ -68,7 +68,7 @@ func ExtractInlineIDs(text string) []string {
 	return out
 }
 
-// ClassifyPath returns Kind and primary ID hints from a path relative to docs/project.
+// ClassifyPath returns Kind and primary ID hints from a path relative to the corpus root.
 func ClassifyPath(rel string) (kind Kind, primaryID string) {
 	rel = filepath.ToSlash(rel)
 	base := filepath.Base(rel)

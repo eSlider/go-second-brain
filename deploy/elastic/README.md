@@ -52,7 +52,7 @@ docker compose --profile elastic up -d elasticsearch kibana filebeat
 
 Для глубокого профилирования Go-сервисов дополнительно используйте `pprof` / трассировку в приложении (отдельно от этого стека).
 
-## Дашборды DemoCare (бот, RAG, Ollama, Qdrant)
+## Дашборды Second Brain (бот, RAG, Ollama, Qdrant)
 
 Бот (`matrix-bot`) и ингестор (`kg-ingestor`) пишут **JSON** в stderr (slog). В [`filebeat.yml`](filebeat.yml) включён **`decode_json_fields`** для строк, начинающихся с `{"time":` — в Elasticsearch появляются поля `knowledge.msg`, `knowledge.level`, `knowledge.event`, `knowledge.latency_ms` и т.д. (удобно для KQL в TSVB).
 
@@ -89,7 +89,7 @@ make elastic-setup       # data view + визуализации + дашборд
 
 Прямые ссылки (порт по умолчанию): [overview](http://127.0.0.1:5601/app/dashboards#/view/knowledge-overview), [rag](http://127.0.0.1:5601/app/dashboards#/view/knowledge-rag), [ollama](http://127.0.0.1:5601/app/dashboards#/view/knowledge-ollama), [qdrant](http://127.0.0.1:5601/app/dashboards#/view/knowledge-qdrant).
 
-Правки визуализаций и дашбордов — в [`setup-kibana.sh`](setup-kibana.sh), затем снова `make elastic-setup`. После смены полей в Filebeat в Kibana может понадобиться **Stack Management → Data views → DemoCare · filebeat → Refresh field list**.
+Правки визуализаций и дашбордов — в [`setup-kibana.sh`](setup-kibana.sh), затем снова `make elastic-setup`. После смены полей в Filebeat в Kibana может понадобиться **Stack Management → Data views → Second Brain · filebeat → Refresh field list**.
 
 ## Опционально: стандартные дашборды Filebeat
 

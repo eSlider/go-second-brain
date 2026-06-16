@@ -1,4 +1,4 @@
-# Virtual MkDocs pages from repo root (README, AGENTS). docs/project/ is on disk.
+# Virtual MkDocs pages from repo root (README, AGENTS). SDK docs live under docs/system/.
 from pathlib import Path
 
 import mkdocs_gen_files

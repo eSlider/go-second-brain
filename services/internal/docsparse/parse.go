@@ -17,7 +17,7 @@ var (
 	reRoadHeader  = regexp.MustCompile(`(?m)^##\s+(ROAD-\d{2})\b`)
 )
 
-// ParseFile parses a single markdown file relative to docs/project root.
+// ParseFile parses a single markdown file relative to the corpus root.
 func ParseFile(rel string, data []byte) (*ParseResult, error) {
 	rel = filepath.ToSlash(rel)
 	text := string(data)

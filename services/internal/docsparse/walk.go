@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// WalkDocs walks root (typically docs/project), parses every .md file, and merges results.
+// WalkDocs walks root (typically examples/corpus), parses every .md file, and merges results.
 func WalkDocs(root string) (*ParseResult, error) {
 	root = filepath.Clean(root)
 	var merged ParseResult

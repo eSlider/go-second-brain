@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Provision Kibana data view + dashboard for DemoCare logs/stats.
+# Provision Kibana data view + dashboard for Second Brain logs/stats.
 #
 # Idempotent: re-running overwrites the saved objects with the same IDs.
 # Requires the elastic profile to be up (Elasticsearch + Kibana + Filebeat).
@@ -22,7 +22,7 @@
 #       knowledge-qdrant-container-logs          (Qdrant container throughput)
 #       knowledge-qdrant-app-events              (upserts + bot Qdrant messages)
 #   - dashboards:
-#       knowledge-overview                       (DemoCare · Logs & Bot stats — общий)
+#       knowledge-overview                       (Second Brain · Logs & Bot stats — общий)
 #       knowledge-rag                            (RAG: запросы бота)
 #       knowledge-ollama                         (Ollama/embed через логи bot/ingestor)
 #       knowledge-qdrant                         (Qdrant: контейнер + приложение)
@@ -70,7 +70,7 @@ ensure_data_view() {
     "data_view": {
       "id": "knowledge-filebeat",
       "title": "filebeat-*",
-      "name": "DemoCare · filebeat",
+      "name": "Second Brain · filebeat",
       "timeFieldName": "@timestamp",
       "allowNoIndex": true
     },
@@ -291,17 +291,17 @@ vis_qdrant_app='{
 
 create_visualizations() {
   echo "Visualizations:"
-  put_so visualization knowledge-bot-qpm           "$(viz_payload 'DemoCare · Bot queries per minute' "$(echo "$vis_bot_qpm" | jq -c .)")"
-  put_so visualization knowledge-bot-latency       "$(viz_payload 'DemoCare · Bot latency (ms)'         "$(echo "$vis_bot_latency" | jq -c .)")"
-  put_so visualization knowledge-bot-errors        "$(viz_payload 'DemoCare · Bot failed queries'        "$(echo "$vis_bot_errors" | jq -c .)")"
-  put_so visualization knowledge-bot-top-senders   "$(viz_payload 'DemoCare · Top bot users'             "$(echo "$vis_top_senders" | jq -c .)")"
-  put_so visualization knowledge-logs-by-container "$(viz_payload 'DemoCare · Log lines by container'    "$(echo "$vis_logs_by_container" | jq -c .)")"
-  put_so visualization knowledge-errors-by-service "$(viz_payload 'DemoCare · Errors per service'        "$(echo "$vis_errors_by_service" | jq -c .)")"
-  put_so visualization knowledge-ingest-batches    "$(viz_payload 'DemoCare · Ingestor batch latency'    "$(echo "$vis_ingest_batches" | jq -c .)")"
-  put_so visualization knowledge-ollama-errors     "$(viz_payload 'DemoCare · Ollama embed probe failures' "$(echo "$vis_ollama_errors" | jq -c .)")"
-  put_so visualization knowledge-ollama-activity   "$(viz_payload 'DemoCare · Ollama/embed activity'      "$(echo "$vis_ollama_activity" | jq -c .)")"
-  put_so visualization knowledge-qdrant-container-logs "$(viz_payload 'DemoCare · Qdrant container logs'  "$(echo "$vis_qdrant_container" | jq -c .)")"
-  put_so visualization knowledge-qdrant-app-events "$(viz_payload 'DemoCare · Qdrant app events'        "$(echo "$vis_qdrant_app" | jq -c .)")"
+  put_so visualization knowledge-bot-qpm           "$(viz_payload 'Second Brain · Bot queries per minute' "$(echo "$vis_bot_qpm" | jq -c .)")"
+  put_so visualization knowledge-bot-latency       "$(viz_payload 'Second Brain · Bot latency (ms)'         "$(echo "$vis_bot_latency" | jq -c .)")"
+  put_so visualization knowledge-bot-errors        "$(viz_payload 'Second Brain · Bot failed queries'        "$(echo "$vis_bot_errors" | jq -c .)")"
+  put_so visualization knowledge-bot-top-senders   "$(viz_payload 'Second Brain · Top bot users'             "$(echo "$vis_top_senders" | jq -c .)")"
+  put_so visualization knowledge-logs-by-container "$(viz_payload 'Second Brain · Log lines by container'    "$(echo "$vis_logs_by_container" | jq -c .)")"
+  put_so visualization knowledge-errors-by-service "$(viz_payload 'Second Brain · Errors per service'        "$(echo "$vis_errors_by_service" | jq -c .)")"
+  put_so visualization knowledge-ingest-batches    "$(viz_payload 'Second Brain · Ingestor batch latency'    "$(echo "$vis_ingest_batches" | jq -c .)")"
+  put_so visualization knowledge-ollama-errors     "$(viz_payload 'Second Brain · Ollama embed probe failures' "$(echo "$vis_ollama_errors" | jq -c .)")"
+  put_so visualization knowledge-ollama-activity   "$(viz_payload 'Second Brain · Ollama/embed activity'      "$(echo "$vis_ollama_activity" | jq -c .)")"
+  put_so visualization knowledge-qdrant-container-logs "$(viz_payload 'Second Brain · Qdrant container logs'  "$(echo "$vis_qdrant_container" | jq -c .)")"
+  put_so visualization knowledge-qdrant-app-events "$(viz_payload 'Second Brain · Qdrant app events'        "$(echo "$vis_qdrant_app" | jq -c .)")"
 }
 
 # --- Dashboard --------------------------------------------------------------
@@ -341,7 +341,7 @@ create_dashboard() {
     --argjson refs "$refs" '
     {
       attributes: {
-        title: "DemoCare · Logs & Bot stats",
+        title: "Second Brain · Logs & Bot stats",
         description: "Operational dashboard for the Matrix bot, ingestor and Compose containers (Filebeat → Elasticsearch).",
         hits: 0,
         panelsJSON: ($panels|tostring),
@@ -387,7 +387,7 @@ create_dashboard_rag() {
     --argjson refs "$refs" '
     {
       attributes: {
-        title: "DemoCare · RAG (bot queries)",
+        title: "Second Brain · RAG (bot queries)",
         description: "Latency, volume, and failures for RAG answers (event=bot_query). Ollama/Qdrant/Neo4j must be reachable from the bot container.",
         hits: 0,
         panelsJSON: ($panels|tostring),
@@ -427,7 +427,7 @@ create_dashboard_ollama() {
     --argjson refs "$refs" '
     {
       attributes: {
-        title: "DemoCare · Ollama / embed (via logs)",
+        title: "Second Brain · Ollama / embed (via logs)",
         description: "Ollama listens on the host; only errors and embed-related lines from matrix-bot / kg-ingestor appear here.",
         hits: 0,
         panelsJSON: ($panels|tostring),
@@ -467,7 +467,7 @@ create_dashboard_qdrant() {
     --argjson refs "$refs" '
     {
       attributes: {
-        title: "DemoCare · Qdrant",
+        title: "Second Brain · Qdrant",
         description: "Vector store: container log volume + ingest upserts and bot-side Qdrant messages.",
         hits: 0,
         panelsJSON: ($panels|tostring),

@@ -10,7 +10,7 @@ Engineering layer for **go-second-brain**: knowledge graph, vector search, Matri
 
 ### Packages
 
-- `cmd/ingestor` — walk `docs/project`, write Neo4j + Qdrant
+- `cmd/ingestor` — walk `DOCS_ROOT` (default `examples/corpus`), write Neo4j + Qdrant
 - `cmd/bot` — Matrix bot with RAG ([go-matrix-bot](https://github.com/eSlider/go-matrix-bot))
 - `cmd/assistant` — STT/TTS CLI loop
 - `pkg/*` — public SDK surface (see ADR-0003)
@@ -48,6 +48,6 @@ RAG functional (slow, needs Ollama): `make test-rag-e2e`
 
 [`services/.golangci.yml`](services/.golangci.yml) — requires Go ≥ 1.26 for golangci-lint.
 
-## Domain content
+## Corpus content
 
-Demo corpus only (`docs/project/`). Do not add real company PII. SDK docs belong in `docs/system/`.
+Public repo ships only [`examples/corpus/`](examples/corpus/) — a tiny synthetic fixture. Keep production knowledge bases private and point `docs.root` at a local path.

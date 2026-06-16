@@ -26,9 +26,9 @@ func ollamaURL() string {
 	return u
 }
 
-func docsProjectDir(t *testing.T) string {
+func corpusDir(t *testing.T) string {
 	t.Helper()
-	root, err := filepath.Abs(filepath.Join("..", "..", "docs", "project"))
+	root, err := filepath.Abs(filepath.Join("..", "..", "examples", "corpus"))
 	require.NoError(t, err)
 	return root
 }
@@ -49,7 +49,7 @@ func TestNeo4jWriteCorpus(t *testing.T) {
 		_ = st.Close(ctx)
 	})
 
-	pr, err := docsparse.WalkDocs(docsProjectDir(t))
+	pr, err := docsparse.WalkDocs(corpusDir(t))
 	require.NoError(t, err)
 	require.NotEmpty(t, pr.Nodes)
 
@@ -75,7 +75,7 @@ func TestQdrantEmbedAndSearch(t *testing.T) {
 		t.Skipf("ollama not reachable: %v", err)
 	}
 
-	vec, err := embCli.Embed(ctx, getenvDefault("EMBED_MODEL", "embeddinggemma"), "Abrechnung Krankenkasse Pflegedienst")
+	vec, err := embCli.Embed(ctx, getenvDefault("EMBED_MODEL", "embeddinggemma"), "sample workflow knowledge node")
 	require.NoError(t, err)
 	dim := uint64(len(vec))
 
@@ -86,10 +86,10 @@ func TestQdrantEmbedAndSearch(t *testing.T) {
 	require.NoError(t, q.EnsureCollection(ctx, name, dim))
 
 	ch := docsparse.TextChunk{
-		NodeID:  "UC-07",
-		Heading: "billing",
-		Path:    "cases/UC-07-monthly-billing.md",
-		Text:    "UC-07 Abrechnung Krankenkasse Rechnung Genehmigung",
+		NodeID:  "UC-02",
+		Heading: "sample process",
+		Path:    "cases/UC-02-sample-process.md",
+		Text:    "UC-02 sample process monthly review SUBJ-REVIEWER",
 	}
 	h := docsparse.ChunkContentHash(ch)
 	vec2, err := embCli.Embed(ctx, getenvDefault("EMBED_MODEL", "embeddinggemma"), ch.Text)
@@ -102,7 +102,7 @@ func TestQdrantEmbedAndSearch(t *testing.T) {
 	})
 	require.NoError(t, q.UpsertPoints(ctx, name, []qdrantpkg.Point{pt}))
 
-	qvec, err := embCli.Embed(ctx, getenvDefault("EMBED_MODEL", "embeddinggemma"), "как выставляют счета в кассу")
+	qvec, err := embCli.Embed(ctx, getenvDefault("EMBED_MODEL", "embeddinggemma"), "monthly review process")
 	require.NoError(t, err)
 	hits, err := q.Search(ctx, name, qvec, 3)
 	require.NoError(t, err)

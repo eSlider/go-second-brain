@@ -1,20 +1,20 @@
 # System documentation index
 
-Read this first when working on the **go-second-brain** SDK (Go services + demo knowledge corpus).
+Read this first when working on the **go-second-brain** SDK (Go services + optional local Markdown corpus).
 
 ## Order of reading
 
 1. [architecture.md](./architecture.md) — packages, data flow, public API surface
 2. [configuration.md](./configuration.md) — `config.yaml` + `.env` merge
-3. [SECURITY.md](./SECURITY.md) — secrets policy and credential rotation
-4. [adr/README.md](./adr/README.md) — architecture decision records
-5. [../project/overview.md](../project/overview.md) — optional demo domain corpus (DemoCare)
+3. [corpus-format.md](./corpus-format.md) — Markdown ID conventions and layout
+4. [SECURITY.md](./SECURITY.md) — secrets policy and credential rotation
+5. [adr/README.md](./adr/README.md) — architecture decision records
 
 ## Agent rules
 
 - Apply **Ponytail** (lazy senior dev): `.cursor/rules/ponytail.mdc`
-- Domain facts live only in `docs/project/` demo files — do not invent Pflegedienst details in code
-- Raw `*.stt.txt` are not used in the public repo; structured content is in `docs/reports/` and `docs/project/`
+- Do not commit proprietary domain knowledge to the public repo; use a private corpus path via `docs.root`
+- Synthetic fixture only: [`examples/corpus`](../../examples/corpus/)
 
 ## Commands (from repo root)
 

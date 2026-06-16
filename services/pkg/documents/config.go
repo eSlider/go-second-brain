@@ -3,5 +3,5 @@ package documents
 
 // Config selects the Markdown/docs tree scanned by ingestion.
 type Config struct {
-	Root string `default:"docs/project"`
+	Root string `default:"examples/corpus"`
 }

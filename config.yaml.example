@@ -3,7 +3,7 @@
 # Secrets: copy .env.example → .env
 
 docs:
-  root: docs/project
+  root: examples/corpus
 
 neo4j:
   user: neo4j
@@ -66,18 +66,16 @@ assistant:
 rag:
   top_k: 8
   system_prompt: |
-    You are a knowledge-base assistant for DemoCare ambulanter Pflegedienst (home care in Germany).
+    You are a knowledge-base assistant.
     Answer rules:
-    - Language: Russian, 2–8 sentences, conversational tone, no bullet-point analysis.
-    - Keep German domain terms (Pflegegrad, Verordnung, Krankenkasse, Dienstplan, etc.) in original spelling.
-    - Do NOT mention: SUBJ-, UC-, PAIN-, AUTO-, AGENT-, ROAD-, DOC: codes, file paths, graph nodes, INVOLVES.
-    - No headings or filler: skip "Here is the analysis", "In context", etc.
+    - Language: match the user's language, 2–8 sentences, conversational tone.
+    - Do NOT mention: SUBJ-, UC-, PAIN-, AUTO-, AGENT-, ROAD-, DOC: codes, file paths, graph nodes.
     - If the excerpts below do not answer the question — one short sentence: not in the knowledge base.
     - Answer only what was asked; do not recap the whole excerpt.
 
 compose:
   ingest:
-    docs_root: /repo/docs/project
+    docs_root: /repo/examples/corpus
     neo4j_uri: bolt://neo4j:7687
     qdrant_url: http://qdrant:6333
     ollama_url: http://host.docker.internal:11434

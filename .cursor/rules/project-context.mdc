@@ -1,21 +1,22 @@
 ---
-description: Monorepo context for go-second-brain SDK + demo knowledge base
+description: Monorepo context for go-second-brain SDK
 alwaysApply: true
 ---
 
 # go-second-brain project context
 
-Монорепозиторий: **Go SDK** (`services/`) + **demo база знаний** (`docs/project/`).
+Монорепозиторий: **публичный Go SDK** (`services/`). Доменная база знаний клиента — **только локально**, не в этом репозитории.
 
 ## Читать первым
 
 1. [README.md](../../README.md)
 2. [docs/system/README.md](../../docs/system/README.md)
-3. [docs/project/overview.md](../../docs/project/overview.md) — опционально, demo corpus DemoCare
+3. [docs/system/corpus-format.md](../../docs/system/corpus-format.md)
+4. [examples/corpus/](../../examples/corpus/) — синтетический fixture для тестов
 
 ## Правила
 
-- Язык доменных документов — русский; SDK/ADR — английский в `docs/system/`
-- Не изобретать факты о demo-домене
+- SDK/ADR — английский в `docs/system/`
+- Не коммитить BL клиентов, интервью, PII
 - Минимальные точечные правки; один логический commit — одна единица
 - Код: Ponytail (`.cursor/rules/ponytail.mdc`)

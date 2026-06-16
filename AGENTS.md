@@ -4,7 +4,7 @@ title: AI
 
 # Agent instructions — go-second-brain
 
-SDK + demo knowledge base monorepo. Primary language: **Russian** for domain demo docs; system/SDK docs in **English** under `docs/system/`.
+Public SDK monorepo: Go services + optional local Markdown corpus. System docs in **English** under `docs/system/`.
 
 ## Read first
 
@@ -13,15 +13,14 @@ README.md
  └── docs/system/README.md
  └── docs/system/architecture.md
  └── docs/system/configuration.md
- └── docs/project/overview.md      # optional demo corpus
- └── docs/project/glossary.md
+ └── docs/system/corpus-format.md
+ └── examples/corpus/              # synthetic fixture only (public)
 ```
 
 ## Conventions
 
-- German domain terms stay in original spelling (`Verordnung`, `Pflegegrad`, …) — see [glossary](./docs/project/glossary.md)
-- Stable IDs: `SUBJ-*`, `UC-*`, `PAIN-*`, `AUTO-*`, `AGENT-*`, `ROAD-*`
-- Do not invent domain facts; demo content is synthetic
+- Stable IDs in corpora: `SUBJ-*`, `UC-*`, `PAIN-*`, `AUTO-*`, `AGENT-*`, `ROAD-*` — see [corpus-format](./docs/system/corpus-format.md)
+- Do not commit proprietary domain knowledge to this public repository
 - Mark unknowns as `TODO: clarify` — do not fabricate
 
 ## Code
@@ -34,5 +33,5 @@ README.md
 ## Forbidden
 
 - Committing `.env`, `config.yaml` with secrets
-- Adding Edelweiss or real company PII to the public repo
-- Editing non-existent `*.stt.txt` (removed from public repo)
+- Adding real company PII or client-specific business logic to the public repo
+- Publishing interview transcripts or operational domain documentation here
